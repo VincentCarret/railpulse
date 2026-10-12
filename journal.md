@@ -1,4 +1,4 @@
-# Journal – TP Fil Rouge 5 (ALTN72) – Couche "V" : Thymeleaf
+# Journal – Rail Pulse 5 (ALTN72) – Couche "V" : Thymeleaf
 
 Réponses aux questions du TP 5. Code de référence : ce projet.
 

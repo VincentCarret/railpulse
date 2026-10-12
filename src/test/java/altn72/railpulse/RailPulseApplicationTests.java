@@ -1,10 +1,10 @@
-package altn72.tpfilrouge;
+package altn72.railpulse;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class TpFilRougeApplicationTests {
+@SpringBootTest(useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
+class RailPulseApplicationTests {
 
     @Test
     void contextLoads() {

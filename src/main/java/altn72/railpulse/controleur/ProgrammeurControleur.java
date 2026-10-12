@@ -1,7 +1,7 @@
-package altn72.tpfilrouge.controleur;
+package altn72.railpulse.controleur;
 
-import altn72.tpfilrouge.modele.Programmeur;
-import altn72.tpfilrouge.service.ProgrammeurService;
+import altn72.railpulse.modele.Programmeur;
+import altn72.railpulse.service.ProgrammeurService;
 import org.springframework.beans.factory.annotation.Autowired;
 // 5.4 -- Imports utiles à la couche "V" : Controller, Model (données transmises à la vue), HttpStatus et ResponseStatusException (erreur 404 si l'id n'existe pas).
 import org.springframework.http.HttpStatus;
