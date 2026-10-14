@@ -1,0 +1,18 @@
+[Unit]
+Description=Rail Pulse Spring Boot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=railpulse
+Group=railpulse
+WorkingDirectory=/opt/railpulse
+EnvironmentFile=/etc/railpulse/railpulse.env
+ExecStart=/usr/bin/java -jar /opt/railpulse/railpulse.jar
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
