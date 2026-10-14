@@ -181,3 +181,4 @@ L'accessibilité complète, les différences H2/MySQL, la charge et la compatibi
 - Le mot de passe PostgreSQL n'a pas été fourni ; la connexion réelle à Supabase reste à confirmer. La clé d'API ne peut pas le remplacer.
 - Aucune migration de données de l'ancienne base MySQL n'est effectuée automatiquement.
 - Vérification : 20 tests réussis sur H2 en mode PostgreSQL, puis les mêmes 20 tests sur PostgreSQL 18 temporaire avec création du schéma `railpulse`. Le serveur de test a été arrêté après la vérification. Cela valide le dialecte PostgreSQL, pas la connectivité au projet Supabase distant.
+- Diagnostic du lancement IntelliJ : `UnknownHostException` sur l'hôte Supabase direct. Ajout de deux configurations explicites MySQL local / Supabase pour éviter de confondre les environnements. Démarrage du JAR avec le profil MySQL vérifié sur un port temporaire : `/login` répond HTTP 200 ; cette instance de vérification a ensuite été arrêtée.

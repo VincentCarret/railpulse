@@ -41,6 +41,13 @@ Les variables d'environnement priment sur les valeurs de ce fichier.
 Dans IntelliJ, lancer le projet avec son dossier racine comme répertoire de travail. Les variables peuvent aussi être renseignées dans **Run > Edit Configurations > Environment variables**.
 Recharger Maven pour récupérer le pilote PostgreSQL.
 
+Deux configurations de lancement IntelliJ sont partagées dans le projet :
+
+- **Rail Pulse - MySQL local** : démarre avec la base locale pour continuer à travailler avant la configuration des secrets distants.
+- **Rail Pulse - Supabase** : utilise les paramètres Supabase et nécessite un hôte accessible ainsi que le mot de passe PostgreSQL.
+
+`UnknownHostException: db.aehaxzwjhtkhqttvvqrd.supabase.co` signifie que le nom de serveur n'est pas résolu. Cela se produit avant la vérification du mot de passe et ne signifie pas que le script SQL est incorrect. Reprendre une URL valide depuis **Connect > Session pooler**.
+
 Pour fournir un mot de passe ponctuel dans PowerShell sans le saisir dans une commande enregistrée dans l'historique :
 
 ```powershell
