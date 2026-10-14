@@ -3,7 +3,7 @@
 ## Périmètre et règles retenues
 
 Ce journal décrit le code effectivement réalisé, ses vérifications et ses limites.
-Le projet utilise Java 21, Spring Boot, Spring MVC, Thymeleaf, Spring Data JPA et MySQL.
+Le projet utilise Java 21, Spring Boot, Spring MVC, Thymeleaf, Spring Data JPA et PostgreSQL/Supabase. Le profil MySQL local reste disponible pour compatibilité.
 Les explications du corrigé initial sont conservées dans [les notes du TP 5](docs/journal-tp5.md).
 
 Les exigences détaillées disponibles portent sur la connexion/déconnexion et la grille d'évaluation.
@@ -128,6 +128,7 @@ Ces logs facilitent le diagnostic ; ce ne sont pas un journal d'audit métier pe
 Commande complète : `./mvnw.cmd verify` sous Windows, avec Java 21.
 Les tests HTTP démarrent un vrai serveur sur un port aléatoire et utilisent un cookie de session par client.
 Ils s'exécutent sur une base H2 en mémoire, sans toucher à MySQL.
+Depuis la préparation Supabase, H2 utilise le mode PostgreSQL. Des variables `TEST_DB_*` permettent également de lancer les mêmes tests sur un PostgreSQL temporaire, comme décrit dans le guide Supabase.
 
 | Suite | Vérifications principales |
 |---|---|
@@ -168,3 +169,15 @@ L'assistance Codex a été utilisée pour la mise en œuvre et la vérification.
 7. Présenter les résultats Maven, le rapport de couverture et les commits.
 
 L'accessibilité complète, les différences H2/MySQL, la charge et la compatibilité de tous les navigateurs ne sont pas certifiées par les seuls tests présents.
+
+## 14/10/2026 — Préparation de PostgreSQL/Supabase
+
+- Ajout du pilote PostgreSQL et du profil Supabase par défaut ; l'ancien accès local passe dans le profil `mysql`.
+- Configuration par `SUPABASE_DB_URL`, `SUPABASE_DB_USERNAME`, `SUPABASE_DB_PASSWORD`, utilisables comme secrets CI/CD.
+- Fichier local de paramètres ignoré par Git et exemple sans secret versionné.
+- SSL et pool de connexions limité ; schéma JPA dédié `railpulse` séparé de `public`.
+- Conservation de l'authentification applicative existante, sans utilisation de la clé de la Data API.
+- Documentation des connexions directe et Session pooler, sans déduire un hôte de pooler non fourni.
+- Le mot de passe PostgreSQL n'a pas été fourni ; la connexion réelle à Supabase reste à confirmer. La clé d'API ne peut pas le remplacer.
+- Aucune migration de données de l'ancienne base MySQL n'est effectuée automatiquement.
+- Vérification : 20 tests réussis sur H2 en mode PostgreSQL, puis les mêmes 20 tests sur PostgreSQL 18 temporaire avec création du schéma `railpulse`. Le serveur de test a été arrêté après la vérification. Cela valide le dialecte PostgreSQL, pas la connectivité au projet Supabase distant.

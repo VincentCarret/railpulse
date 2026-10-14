@@ -1,13 +1,13 @@
 # Rail Pulse
 
-Application Spring Boot avec Java 21, Maven, Thymeleaf et MySQL.
+Application Spring Boot avec Java 21, Maven, Thymeleaf et PostgreSQL/Supabase.
 
 ## IntelliJ IDEA
 
 Ouvrir ce dossier comme projet et recharger Maven depuis `pom.xml` (Reload All Maven Projects).
 Le SDK du projet est Java 21, installé ici dans `C:\Users\vincc\.jdks\ms-21.0.12.1`.
 Lancer `RailPulseApplication` dans le package `altn72.railpulse`.
-Sous Windows, l'application démarre automatiquement le service `MySQL95` si la base locale ne répond pas encore. Windows peut demander une confirmation administrateur pour démarrer le service. Si MySQL est déjà disponible, l'application se connecte directement.
+Le profil par défaut est `supabase`. Configurer les identifiants PostgreSQL avant le lancement, selon le [guide Supabase](docs/supabase.md).
 
 ## Compilation sous PowerShell
 
@@ -16,8 +16,12 @@ $env:JAVA_HOME = 'C:\Users\vincc\.jdks\ms-21.0.12.1'
 .\mvnw.cmd -DskipTests package
 ```
 
-Pour lancer l'application, MySQL doit être disponible sur `localhost:3305`, avec la base `Base_ALTN72` et les identifiants configurés dans `application.properties`. La variable `DB_PASSWORD` permet de définir le mot de passe.
-Les tests utilisent une base H2 temporaire et ne modifient pas MySQL : `.\mvnw.cmd test`.
+Pour Supabase, renseigner `SUPABASE_DB_PASSWORD` et éventuellement `SUPABASE_DB_URL` et `SUPABASE_DB_USERNAME` via des variables d'environnement ou `config/supabase-local.properties` (ignoré par Git).
+Une clé API `sb_secret_*` ne remplace pas le mot de passe PostgreSQL.
+Les tables JPA sont créées dans le schéma dédié `railpulse` ; les comptes et données de l'ancienne base MySQL ne sont pas automatiquement transférés.
+
+L'ancienne configuration MySQL reste disponible avec le profil `mysql` (`SPRING_PROFILES_ACTIVE=mysql`). Elle utilise `localhost:3305/Base_ALTN72` et peut démarrer le service Windows `MySQL95` si nécessaire.
+Les tests utilisent par défaut une base H2 temporaire en mode PostgreSQL et ne modifient ni Supabase ni MySQL : `.\mvnw.cmd test`.
 
 ## Connexion et déconnexion
 

@@ -1,0 +1,8 @@
+# Copier ce fichier vers config/supabase-local.properties (ignoré par Git).
+# Renseigner le mot de passe DATABASE, pas une clé sb_secret_*.
+SUPABASE_DB_PASSWORD=
+
+# Connexion directe fournie. Si elle est inaccessible, copier depuis Supabase
+# Connect > Session pooler le vrai hôte et le vrai nom d'utilisateur.
+SUPABASE_DB_URL=jdbc:postgresql://db.aehaxzwjhtkhqttvvqrd.supabase.co:5432/postgres?sslmode=require&connectTimeout=10&socketTimeout=30
+SUPABASE_DB_USERNAME=postgres

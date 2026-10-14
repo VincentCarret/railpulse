@@ -19,9 +19,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(useMainMethod = SpringBootTest.UseMainMethod.ALWAYS,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "spring.datasource.url=jdbc:h2:mem:auth-tests;MODE=MySQL;DB_CLOSE_DELAY=-1",
-                "spring.datasource.driver-class-name=org.h2.Driver",
-                "spring.datasource.username=sa", "spring.datasource.password=",
+                "spring.datasource.url=${TEST_DB_URL:jdbc:h2:mem:auth-tests;MODE=PostgreSQL;DB_CLOSE_DELAY=-1}",
+                "spring.datasource.driver-class-name=${TEST_DB_DRIVER:org.h2.Driver}",
+                "spring.datasource.username=${TEST_DB_USERNAME:sa}", "spring.datasource.password=${TEST_DB_PASSWORD:}",
+                "spring.jpa.properties.hibernate.default_schema=${TEST_DB_SCHEMA:public}",
+                "spring.sql.init.mode=${TEST_DB_INIT:never}",
                 "spring.jpa.hibernate.ddl-auto=create-drop", "spring.jpa.show-sql=false"
         })
 abstract class WebIntegrationTestSupport {
