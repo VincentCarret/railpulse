@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Une erreur est survenue · Rail Pulse</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="container page-content">
+    <section class="form-card" aria-labelledby="error-title">
+        <p class="section-label" th:text="|ERREUR ${status ?: 500}|">ERREUR</p>
+        <h1 id="error-title">Nous ne pouvons pas afficher cette page.</h1>
+        <p class="text-secondary" role="alert" th:text="${messageUtilisateur ?: 'La demande n’a pas pu aboutir. Vérifiez l’adresse ou revenez à l’accueil.'}"></p>
+        <a class="btn btn-success" th:href="@{/}" th:if="${prenom != null}">Revenir à l’accueil</a>
+        <a class="btn btn-success" th:href="@{/login}" th:unless="${prenom != null}">Revenir à la connexion</a>
+    </section>
+</main>
+</body>
+</html>
