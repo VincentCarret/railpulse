@@ -9,9 +9,9 @@ Activer le profil `supabase` avec la configuration IntelliJ dédiée ou `SPRING_
 | Variable | Valeur |
 |---|---|
 | `SPRING_PROFILES_ACTIVE` | `supabase` pour activer la configuration distante, notamment dans le CI/CD. |
-| `SUPABASE_DB_PASSWORD` | Mot de passe de la base PostgreSQL, obligatoire pour une connexion réelle. |
-| `SUPABASE_DB_URL` | URL JDBC avec SSL. Par défaut : `jdbc:postgresql://db.aehaxzwjhtkhqttvvqrd.supabase.co:5432/postgres?sslmode=require&connectTimeout=10&socketTimeout=30`. |
-| `SUPABASE_DB_USERNAME` | `postgres` en connexion directe ; reprendre la valeur exacte du tableau de bord pour le pooler. |
+| `SPRING_DATASOURCE_PASSWORD` | Mot de passe de la base PostgreSQL, obligatoire pour une connexion réelle. |
+| `SPRING_DATASOURCE_URL` | URL JDBC avec SSL. Par défaut : `jdbc:postgresql://db.aehaxzwjhtkhqttvvqrd.supabase.co:5432/postgres?sslmode=require&connectTimeout=10&socketTimeout=30`. |
+| `SPRING_DATASOURCE_USERNAME` | `postgres` en connexion directe ; reprendre la valeur exacte du tableau de bord pour le pooler. |
 
 Le pool Hikari est limité à 5 connexions et garde au minimum une connexion disponible.
 Le dialecte SQL est déduit du pilote PostgreSQL. Aucun mot de passe n'est inclus dans l'URL ou les fichiers versionnés.
@@ -35,10 +35,8 @@ Référence : [documentation officielle des connexions Supabase](https://supabas
 
 ## Développement local
 
-Copier `config/supabase-local.properties.example` vers `config/supabase-local.properties`, puis remplir le mot de passe et les éventuels paramètres de pooler.
-Le second fichier est ignoré par Git et chargé seulement par le profil Supabase.
-Il permet de renseigner directement `spring.datasource.url`, `spring.datasource.username` et `spring.datasource.password` en dur pour le développement local. Remplacer le marqueur de mot de passe par le vrai mot de passe PostgreSQL.
-Pour utiliser ensuite les variables `SUPABASE_DB_*`, retirer ces trois entrées directes du fichier local ou ne pas déployer ce fichier. Les variables standard `SPRING_DATASOURCE_*` peuvent aussi surcharger directement ces propriétés.
+Les paramètres sont désormais en dur dans `src/main/resources/application-supabase.properties` : URL JDBC et utilisateur `postgres`. Le champ `spring.datasource.password` est vide, car le vrai mot de passe PostgreSQL n'a pas été fourni.
+Le fichier `config/supabase-local.properties` n'est plus importé automatiquement. Les variables standard `SPRING_DATASOURCE_*` permettent de remplacer les valeurs en dur dans le futur CI/CD.
 
 Dans IntelliJ, lancer le projet avec son dossier racine comme répertoire de travail. Les variables peuvent aussi être renseignées dans **Run > Edit Configurations > Environment variables**.
 Recharger Maven pour récupérer le pilote PostgreSQL.
@@ -54,7 +52,7 @@ Pour fournir un mot de passe ponctuel dans PowerShell sans le saisir dans une co
 
 ```powershell
 $supabasePassword = Read-Host 'Mot de passe PostgreSQL Supabase' -AsSecureString
-$env:SUPABASE_DB_PASSWORD = [System.Net.NetworkCredential]::new('', $supabasePassword).Password
+$env:SPRING_DATASOURCE_PASSWORD = [System.Net.NetworkCredential]::new('', $supabasePassword).Password
 .\mvnw.cmd spring-boot:run
 ```
 

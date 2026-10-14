@@ -16,7 +16,7 @@ $env:JAVA_HOME = 'C:\Users\vincc\.jdks\ms-21.0.12.1'
 .\mvnw.cmd -DskipTests package
 ```
 
-Pour Supabase, renseigner `SUPABASE_DB_PASSWORD` et éventuellement `SUPABASE_DB_URL` et `SUPABASE_DB_USERNAME` via des variables d'environnement ou `config/supabase-local.properties` (ignoré par Git).
+Pour Supabase, les valeurs sont renseignées directement dans `src/main/resources/application-supabase.properties`. Le mot de passe PostgreSQL reste à remplir. Pour le futur CI/CD, les variables standard `SPRING_DATASOURCE_PASSWORD`, `SPRING_DATASOURCE_URL` et `SPRING_DATASOURCE_USERNAME` peuvent remplacer ces valeurs.
 Une clé API `sb_secret_*` ne remplace pas le mot de passe PostgreSQL.
 Les tables JPA sont créées dans le schéma dédié `railpulse` ; les comptes et données de l'ancienne base MySQL ne sont pas automatiquement transférés.
 
