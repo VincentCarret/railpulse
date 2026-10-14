@@ -4,7 +4,7 @@ L'application utilise PostgreSQL via JDBC et Spring Data JPA. Elle ne passe pas 
 
 ## Paramètres
 
-Activer le profil `supabase` avec la configuration IntelliJ dédiée ou `SPRING_PROFILES_ACTIVE=supabase`. Le profil par défaut reste `mysql` pour le développement local tant que la connexion distante n'est pas configurée. Les mêmes variables peuvent être renseignées localement, dans IntelliJ ou avec les secrets du futur déploiement CI/CD.
+Le profil `supabase` est utilisé par défaut. La configuration IntelliJ MySQL reste disponible pour le développement local. Les mêmes variables peuvent être renseignées localement, dans IntelliJ ou avec les secrets du futur déploiement CI/CD.
 
 | Variable | Valeur |
 |---|---|
@@ -35,7 +35,7 @@ Référence : [documentation officielle des connexions Supabase](https://supabas
 
 ## Développement local
 
-Les paramètres sont désormais en dur dans `src/main/resources/application-supabase.properties` : URL JDBC et utilisateur `postgres`. Le champ `spring.datasource.password` est vide, car le vrai mot de passe PostgreSQL n'a pas été fourni.
+Les paramètres sont désormais en dur dans `src/main/resources/application-supabase.properties` : URL JDBC du Session pooler et utilisateur `postgres.aehaxzwjhtkhqttvvqrd`. Le mot de passe reste local et ne doit jamais être commité.
 Le fichier `config/supabase-local.properties` n'est plus importé automatiquement. Les variables standard `SPRING_DATASOURCE_*` permettent de remplacer les valeurs en dur dans le futur CI/CD.
 
 Dans IntelliJ, lancer le projet avec son dossier racine comme répertoire de travail. Les variables peuvent aussi être renseignées dans **Run > Edit Configurations > Environment variables**.
@@ -46,7 +46,7 @@ Deux configurations de lancement IntelliJ sont partagées dans le projet :
 - **Rail Pulse - MySQL local** : démarre avec la base locale pour continuer à travailler avant la configuration des secrets distants.
 - **Rail Pulse - Supabase** : utilise les paramètres Supabase et nécessite un hôte accessible ainsi que le mot de passe PostgreSQL.
 
-`UnknownHostException: db.aehaxzwjhtkhqttvvqrd.supabase.co` signifie que le nom de serveur n'est pas résolu. Cela se produit avant la vérification du mot de passe et ne signifie pas que le script SQL est incorrect. Reprendre une URL valide depuis **Connect > Session pooler**.
+`UnknownHostException` signifie que le nom de serveur n'est pas résolu. Reprendre l'URL exacte depuis **Connect > Session pooler**.
 
 Pour fournir un mot de passe ponctuel dans PowerShell sans le saisir dans une commande enregistrée dans l'historique :
 
