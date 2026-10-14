@@ -1,6 +1,10 @@
 package altn72.railpulse.modele;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "programmeur")
@@ -11,21 +15,30 @@ public class Programmeur {
     private Integer id;
 
     @Column(name = "nom", nullable = false, length = 100)
+    @NotBlank(message = "Le nom est obligatoire.")
+    @Size(max = 100, message = "Le nom ne doit pas dépasser 100 caractères.")
     private String nom;
 
     @Column(name = "prenom", nullable = false, length = 100)
+    @NotBlank(message = "Le prénom est obligatoire.")
+    @Size(max = 100, message = "Le prénom ne doit pas dépasser 100 caractères.")
     private String prenom;
 
     @Column(name = "adresse")
+    @Size(max = 255, message = "L'adresse ne doit pas dépasser 255 caractères.")
     private String adresse;
 
     @Column(name = "langage_expertise", length = 100)
+    @Size(max = 100, message = "Le langage ne doit pas dépasser 100 caractères.")
     private String langageExpertise;
 
     @Column(name = "livre_prefere", length = 150)
+    @Size(max = 150, message = "Le livre ne doit pas dépasser 150 caractères.")
     private String livrePrefere;
 
     @Column(name = "salaire")
+    @PositiveOrZero(message = "Le salaire doit être positif ou nul.")
+    @DecimalMax(value = "1.7976931348623157E308", message = "Le salaire doit être un nombre fini.")
     private Double salaire;
 
     public Integer getId() {

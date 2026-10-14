@@ -1,44 +1,49 @@
 # Rail Pulse
 
-Application Spring Boot 4 / Java 21 avec Thymeleaf, Spring Data JPA et MySQL. Le code utilise toujours la base MySQL locale ; aucune connexion Supabase n'est activée.
+Application Spring Boot avec Java 21, Maven, Thymeleaf et PostgreSQL/Supabase.
 
-## Développement
+## IntelliJ IDEA
 
-Avec un JDK 21, ouvrir le projet Maven dans IntelliJ IDEA et lancer `RailPulseApplication`. Sous Windows, l'application essaie de démarrer le service `MySQL95` si la base locale ne répond pas. Par défaut, elle utilise `localhost:3305`, la base `Base_ALTN72`, l'utilisateur `root` et le mot de passe défini par `DB_PASSWORD` (ou `root`).
+Ouvrir ce dossier comme projet et recharger Maven depuis `pom.xml` (Reload All Maven Projects).
+Le SDK du projet est Java 21, installé ici dans `C:\Users\vincc\.jdks\ms-21.0.12.1`.
+Lancer `RailPulseApplication` dans le package `altn72.railpulse`.
+Le profil par défaut est `mysql` pour permettre le lancement local habituel. Pour Supabase, sélectionner **Rail Pulse - Supabase** ou définir `SPRING_PROFILES_ACTIVE=supabase`, puis configurer les identifiants PostgreSQL selon le [guide Supabase](docs/supabase.md).
+
+## Compilation sous PowerShell
 
 ```powershell
+$env:JAVA_HOME = 'C:\Users\vincc\.jdks\ms-21.0.12.1'
+.\mvnw.cmd -DskipTests package
+```
+
+Pour Supabase, les valeurs sont renseignées directement dans `src/main/resources/application-supabase.properties`. Le mot de passe PostgreSQL reste à remplir. Pour le futur CI/CD, les variables standard `SPRING_DATASOURCE_PASSWORD`, `SPRING_DATASOURCE_URL` et `SPRING_DATASOURCE_USERNAME` peuvent remplacer ces valeurs.
+Une clé API `sb_secret_*` ne remplace pas le mot de passe PostgreSQL.
+Les tables JPA sont créées dans le schéma dédié `railpulse` ; les comptes et données de l'ancienne base MySQL ne sont pas automatiquement transférés.
+
+La configuration locale par défaut utilise le profil `mysql`, `localhost:3305/Base_ALTN72` et peut démarrer le service Windows `MySQL95` si nécessaire.
+Les tests utilisent par défaut une base H2 temporaire en mode PostgreSQL et ne modifient ni Supabase ni MySQL : `.\mvnw.cmd test`.
+
+## Connexion et déconnexion
+
+Ouvrir `/login` et saisir le login et le mot de passe d'un compte de la table `users`.
+Les profils possibles sont `AGENT` et `RESPONSABLE_EXPLOITATION`.
+Une erreur d'identification réaffiche le formulaire avec un message ; une connexion réussie ouvre l'accueil.
+Le bouton « Déconnectez-vous » ferme la session et revient à la page de connexion.
+
+Les comptes existants avec un mot de passe en clair sont reconnus et leur mot de passe est remplacé par un hash BCrypt après une connexion réussie.
+Les mots de passe BCrypt, avec ou sans préfixe `{bcrypt}`, sont aussi reconnus.
+Le mécanisme utilise le [PasswordEncoder de Spring Security](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html).
+
+## Qualité et tests
+
+```powershell
+$env:JAVA_HOME = 'C:\Users\vincc\.jdks\ms-21.0.12.1'
 .\mvnw.cmd verify
 ```
 
-Les tests utilisent H2 en mémoire localement. Dans GitHub Actions, ils s'exécutent sur un MySQL temporaire grâce aux variables `SPRING_DATASOURCE_*` du workflow.
+Cette commande compile, exécute les tests isolés sur H2, construit le JAR et produit le rapport de couverture dans `target/site/jacoco/index.html`.
+Les formulaires de programmeurs sont validés côté serveur : noms obligatoires, longueurs limitées et salaire facultatif non négatif.
+Les erreurs de saisie conservent les valeurs du formulaire ; les erreurs HTTP utilisent une page commune sans détails techniques.
 
-## CI / CD vers un VPS
-
-Le workflow [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) compile, teste et publie le JAR comme artefact à chaque push et pull request. Si la variable de dépôt GitHub `DEPLOY_ENABLED` vaut `true`, un push sur `master` copie le JAR sur le VPS et redémarre le service systemd.
-
-Préparer le VPS Linux avec Java 21 et systemd :
-
-1. Créer un utilisateur `railpulse` avec accès SSH par clé et un répertoire `/opt/railpulse` dont il est propriétaire.
-2. Créer `/etc/railpulse/railpulse.env` (propriétaire `root`, permissions `600`) avec les paramètres de la base accessible depuis le VPS. Pour la configuration MySQL actuelle :
-
-```text
-SPRING_DATASOURCE_URL=jdbc:mysql://<hote-mysql>:3306/Base_ALTN72
-SPRING_DATASOURCE_USERNAME=<utilisateur-mysql>
-DB_PASSWORD=<mot-de-passe-mysql>
-SERVER_PORT=8080
-SERVER_ADDRESS=127.0.0.1
-```
-
-3. Copier [`deploy/railpulse.service`](deploy/railpulse.service) dans `/etc/systemd/system/railpulse.service`, puis lancer `sudo systemctl daemon-reload` et `sudo systemctl enable railpulse`. Vérifier le chemin de Java (`/usr/bin/java`) dans le service. Configurer un proxy HTTP vers le port 8080 si l'application doit être accessible depuis Internet.
-4. Autoriser l'utilisateur SSH `railpulse` à exécuter uniquement `sudo /usr/bin/systemctl restart railpulse` sans mot de passe, avec `sudo visudo -f /etc/sudoers.d/railpulse` :
-
-```text
-railpulse ALL=(root) NOPASSWD: /usr/bin/systemctl restart railpulse
-```
-
-5. Ajouter les secrets GitHub `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_KNOWN_HOSTS` et éventuellement `VPS_PORT`. Vérifier l'empreinte de la clé SSH du VPS avant de remplir `VPS_KNOWN_HOSTS`.
-6. Quand le VPS est prêt, définir `DEPLOY_ENABLED=true` dans les variables GitHub et pousser sur `master`.
-
-Le service lit ses variables dans `/etc/railpulse/railpulse.env`. Ce mécanisme pourra aussi recevoir plus tard l'URL, l'utilisateur et le mot de passe PostgreSQL de Supabase, sans placer de secrets dans GitHub Actions. Pour utiliser réellement Supabase, il faudra d'abord ajouter le pilote PostgreSQL et adapter la configuration de la base de l'application. Le pipeline actuel ne fait aucune opération sur Supabase.
-
-L'application ne possède pas encore d'authentification ; protéger son accès avant de l'ouvrir publiquement.
+Le [journal du projet](journal.md) explique SOLID, les deux fonctionnalités transverses retenues, les règles, les tests et les limites de la vérification.
+Les [notes du TP initial](docs/journal-tp5.md) sont archivées séparément.

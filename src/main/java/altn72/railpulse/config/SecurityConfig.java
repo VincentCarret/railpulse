@@ -1,0 +1,41 @@
+package altn72.railpulse.config;
+
+import altn72.railpulse.service.AuthService;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+    @Bean
+    DaoAuthenticationProvider authenticationProvider(AuthService authService, PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(authService);
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setUserDetailsPasswordService(authService);
+        return provider;
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers("/login", "/css/**", "/js/**", "/error").permitAll()
+                        .anyRequest().authenticated())
+                .formLogin(form -> form.loginPage("/login")
+                        .failureUrl("/login?error")
+                        .defaultSuccessUrl("/", true).permitAll())
+                .logout(logout -> logout.logoutSuccessUrl("/login?logout")
+                        .invalidateHttpSession(true).clearAuthentication(true)
+                        .deleteCookies("JSESSIONID"))
+                .build();
+    }
+}

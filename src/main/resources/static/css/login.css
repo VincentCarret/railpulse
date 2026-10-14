@@ -1,0 +1,44 @@
+:root { --rail-ink: #102e32; --rail-mint: #b6edc9; --rail-muted: #6b7979; }
+body { background: #fafbf8; color: var(--rail-ink); font-family: "Segoe UI", Arial, sans-serif; }
+.brand-panel { position: relative; overflow: hidden; background: var(--rail-ink); color: #fff; padding: 48px 9%; }
+.brand { color: #fff; font-size: 29px; font-weight: 700; letter-spacing: -1px; width: fit-content; }
+.brand:hover { color: var(--rail-mint); }
+.brand-symbol { display: inline-flex; align-items: center; justify-content: center; width: 45px; height: 45px; border: 1px solid #71968b; border-radius: 13px; font-size: 20px; letter-spacing: -2px; }
+.brand-symbol span { color: var(--rail-mint); margin-left: 2px; }
+.brand-content { padding-top: 80px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 10px; letter-spacing: 2px; font-weight: 700; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rail-mint); box-shadow: 0 0 0 4px #b6edc910; }
+h1 { font-size: clamp(2.5rem, 3.5vw, 3.7rem); line-height: 1.15; letter-spacing: -2px; font-weight: 600; margin: 26px 0; }
+h1 span { color: var(--rail-mint); }
+.brand-description { font-size: 15px; line-height: 1.9; color: #bdcfcb; }
+.network-art { height: 200px; position: relative; margin-top: 40px; max-width: 430px; }
+.network-line { position: absolute; width: 105%; height: 80px; border: 1px solid #8ab2a743; border-radius: 60px; transform: rotate(-22deg); }
+.line-one { top: 47px; left: -30px; }
+.line-two { top: 76px; left: 35px; border-color: #b6edc98c; }
+.network-node { position: absolute; width: 11px; height: 11px; background: var(--rail-mint); border: 3px solid var(--rail-ink); box-shadow: 0 0 0 1px #b6edc98c; border-radius: 50%; }
+.node-one { top: 115px; left: 12%; }.node-two { top: 62px; left: 47%; }.node-three { top: 115px; left: 72%; }.node-four { top: 55px; left: 91%; }
+.network-label { position: absolute; font-size: 8px; letter-spacing: 1.5px; color: #a4c2b9; }
+.label-one { top: 143px; left: 5%; }.label-two { top: 35px; left: 37%; }.label-three { top: 142px; left: 66%; }
+.brand-footer { color: #9cb8b0; font-size: 12px; padding-top: 28px; }
+.form-panel { padding: 44px 7% 28px; min-height: 100vh; }
+.workspace-label { font-size: 10px; letter-spacing: 1.8px; font-weight: 600; color: var(--rail-muted); }
+.workspace-label span { font-size: 16px; margin-left: 8px; }
+.login-form-wrap { max-width: 390px; align-self: center; padding: 60px 0; }
+.welcome-icon { width: 54px; height: 54px; display: grid; place-items: center; background: #e8f0e8; border: 1px solid #dce6db; border-radius: 15px; }
+.form-eyebrow { font-size: 9px; letter-spacing: 1.6px; color: #648275; }
+h2 { font-size: clamp(1.8rem, 2.3vw, 2.3rem); font-weight: 600; line-height: 1.2; letter-spacing: -1.3px; }
+.form-description { color: var(--rail-muted); font-size: 14px; line-height: 1.7; }
+.form-label { font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.form-control { font-size: 14px; padding: 15px 16px; border: 1px solid #dce2dc; background: #fff; border-radius: 8px; color: var(--rail-ink); }
+.form-control::placeholder { color: #8b9691; }
+.form-control:focus { border-color: #5a9474; box-shadow: 0 0 0 3px #58957620; }
+.password-field input { padding-right: 55px; }
+.password-toggle { position: absolute; right: 5px; top: 5px; bottom: 5px; width: 44px; border: 0; border-radius: 5px; background: transparent; color: #6b7979; }
+.password-toggle:hover { background: #edf3ed; }.password-toggle:focus-visible { outline: 2px solid #5a9474; }
+.login-button { --bs-btn-bg: #153b34; --bs-btn-border-color: #153b34; --bs-btn-hover-bg: #245748; --bs-btn-hover-border-color: #245748; --bs-btn-active-bg: #102e32; --bs-btn-active-border-color: #102e32; padding: 15px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.login-button span { font-size: 19px; line-height: 1; }
+.access-help { font-size: 11px; color: #52665e; line-height: 1.9; }.access-help span { color: #76857d; }
+.form-footer { color: #7b8981; font-size: 10px; }
+@media (min-width: 1400px) { .brand-panel { padding-left: 7%; padding-right: 6%; } }
+@media (max-width: 991.98px) { .brand-panel { padding: 26px 8% 30px; }.brand-content { padding-top: 40px; }h1 { font-size: 2.6rem; }.brand-description { margin-bottom: 0; }.network-art, .brand-footer { display: none; }.form-panel { min-height: auto; padding: 28px 8% 22px; }.login-form-wrap { max-width: 440px; padding: 38px 0; }.workspace-label { display: none; } }
+@media (max-width: 400px) { h1 { font-size: 2.15rem; }h2 { font-size: 1.8rem; }.form-footer { flex-direction: column; gap: 4px !important; } }

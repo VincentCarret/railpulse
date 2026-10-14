@@ -1,0 +1,22 @@
+
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Accueil - RailPulse</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- Header commun -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="home-content">
+    <h1>Bienvenue sur RailPulse</h1>
+    <p>Tableau de bord des équipements.</p>
+    <a class="home-link" th:href="@{/programmeurs}">Accéder aux programmeurs →</a>
+</main>
+
+</body>
+</html>

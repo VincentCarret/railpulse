@@ -4,3 +4,7 @@ out/
 .idea/dataSources*
 .idea/httpRequests/
 *.log
+config/supabase-local.properties
+.env
+.env.*
+!.env.example
