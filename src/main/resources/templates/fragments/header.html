@@ -1,0 +1,21 @@
+
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<header th:fragment="header" class="header">
+    <div class="utilisateur">
+        Bonjour
+        <span th:text="${prenom}"></span>
+        (<span th:text="${profil}"></span>)
+
+        |
+
+        <form th:action="@{/logout}" method="post">
+            <button type="submit">Déconnectez-vous</button>
+        </form>
+    </div>
+</header>
+
+</body>
+</html>
