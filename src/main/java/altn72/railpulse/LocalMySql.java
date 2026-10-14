@@ -1,6 +1,8 @@
 package altn72.railpulse;
 
 import org.springframework.core.env.Environment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -11,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 /** Starts the local Windows MySQL service before Spring creates its datasource. */
 final class LocalMySql {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalMySql.class);
     private LocalMySql() {
     }
 
@@ -33,7 +36,7 @@ final class LocalMySql {
             return;
         }
 
-        System.out.println("Rail Pulse : démarrage du service MySQL95...");
+        LOGGER.info("Démarrage du service MySQL95");
         // Windows may require administrator rights to start a stopped service.
         // Request elevation only when a normal Start-Service fails.
         String command = "$ErrorActionPreference='Stop'; try { "

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="fields">
+    <div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('*')}">
+        Vérifiez les champs signalés ci-dessous. Aucune modification n’a été enregistrée.
+    </div>
+    <div class="row g-4">
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="nom">Nom *</label>
+            <input type="text" class="form-control" th:field="*{nom}" th:errorclass="is-invalid"
+                   maxlength="100" required aria-describedby="nom-error" th:attr="aria-invalid=${#fields.hasErrors('nom')}">
+            <div class="invalid-feedback" id="nom-error" th:errors="*{nom}"></div>
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="prenom">Prénom *</label>
+            <input type="text" class="form-control" th:field="*{prenom}" th:errorclass="is-invalid"
+                   maxlength="100" required aria-describedby="prenom-error" th:attr="aria-invalid=${#fields.hasErrors('prenom')}">
+            <div class="invalid-feedback" id="prenom-error" th:errors="*{prenom}"></div>
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="adresse">Adresse</label>
+            <input type="text" class="form-control" th:field="*{adresse}" th:errorclass="is-invalid"
+                   maxlength="255" aria-describedby="adresse-error" th:attr="aria-invalid=${#fields.hasErrors('adresse')}">
+            <div class="invalid-feedback" id="adresse-error" th:errors="*{adresse}"></div>
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="langageExpertise">Langage d’expertise</label>
+            <input type="text" class="form-control" th:field="*{langageExpertise}" th:errorclass="is-invalid"
+                   maxlength="100" aria-describedby="langageExpertise-error" th:attr="aria-invalid=${#fields.hasErrors('langageExpertise')}">
+            <div class="invalid-feedback" id="langageExpertise-error" th:errors="*{langageExpertise}"></div>
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="livrePrefere">Livre préféré</label>
+            <input type="text" class="form-control" th:field="*{livrePrefere}" th:errorclass="is-invalid"
+                   maxlength="150" aria-describedby="livrePrefere-error" th:attr="aria-invalid=${#fields.hasErrors('livrePrefere')}">
+            <div class="invalid-feedback" id="livrePrefere-error" th:errors="*{livrePrefere}"></div>
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="salaire">Salaire</label>
+            <input type="number" class="form-control" th:field="*{salaire}" th:errorclass="is-invalid"
+                   min="0" step="any" aria-describedby="salaire-error" th:attr="aria-invalid=${#fields.hasErrors('salaire')}">
+            <div class="invalid-feedback" id="salaire-error" th:errors="*{salaire}"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
