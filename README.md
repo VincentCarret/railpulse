@@ -29,3 +29,17 @@ Le bouton « Déconnectez-vous » ferme la session et revient à la page de conn
 Les comptes existants avec un mot de passe en clair sont reconnus et leur mot de passe est remplacé par un hash BCrypt après une connexion réussie.
 Les mots de passe BCrypt, avec ou sans préfixe `{bcrypt}`, sont aussi reconnus.
 Le mécanisme utilise le [PasswordEncoder de Spring Security](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html).
+
+## Qualité et tests
+
+```powershell
+$env:JAVA_HOME = 'C:\Users\vincc\.jdks\ms-21.0.12.1'
+.\mvnw.cmd verify
+```
+
+Cette commande compile, exécute les tests isolés sur H2, construit le JAR et produit le rapport de couverture dans `target/site/jacoco/index.html`.
+Les formulaires de programmeurs sont validés côté serveur : noms obligatoires, longueurs limitées et salaire facultatif non négatif.
+Les erreurs de saisie conservent les valeurs du formulaire ; les erreurs HTTP utilisent une page commune sans détails techniques.
+
+Le [journal du projet](journal.md) explique SOLID, les deux fonctionnalités transverses retenues, les règles, les tests et les limites de la vérification.
+Les [notes du TP initial](docs/journal-tp5.md) sont archivées séparément.

@@ -1,125 +1,170 @@
-# Journal – Rail Pulse 5 (ALTN72) – Couche "V" : Thymeleaf
+# Journal de développement — Rail Pulse
 
-Réponses aux questions du TP 5. Code de référence : ce projet.
+## Périmètre et règles retenues
 
-## 5.2 Configuration
-- Dépendance spring-boot-starter-thymeleaf déjà dans le pom.xml. À vérifier, rien à ajouter.
-- Apporte : moteur Thymeleaf + intégration Spring MVC.
-- Auto-configuration : templates cherchés dans `src/main/resources/templates`, suffixe `.html`.
+Ce journal décrit le code effectivement réalisé, ses vérifications et ses limites.
+Le projet utilise Java 21, Spring Boot, Spring MVC, Thymeleaf, Spring Data JPA et MySQL.
+Les explications du corrigé initial sont conservées dans [les notes du TP 5](docs/journal-tp5.md).
 
-## 5.3 Dossiers
-- Templates : `src/main/resources/templates`.
-- Statiques (non transformés) : `src/main/resources/static`.
+Les exigences détaillées disponibles portent sur la connexion/déconnexion et la grille d'évaluation.
+Le CRUD de programmeurs provient du TP et sert de support aux formulaires, transactions et tests.
+Aucune règle supplémentaire sur des équipements ou incidents ferroviaires n'a été fournie : ces fonctionnalités ne sont pas déclarées réalisées.
 
-## 5.4 Changements dans le contrôleur
-- `@RestController` = `@Controller` + `@ResponseBody`.
-- `@RestController` : la valeur retournée est écrite dans le corps HTTP (JSON).
-- `@Controller` : la valeur retournée (String) est le NOM d'un template.
-- Spring passe ce nom au moteur Thymeleaf, qui produit la page HTML.
-- Données vers la vue : objet `Model`.
-- Conséquence : ResponseEntity (4.9) et @RequestBody (JSON) ne servent plus ici.
+| Règle | Mise en œuvre et justification |
+|---|---|
+| Login existant et mot de passe valide | Spring Security vérifie le compte de la table `users`. |
+| Erreur d'identification | Retour au même formulaire, message générique ne révélant pas si le compte existe. |
+| Utilisateur connecté | Prénom, profil et formulaire de déconnexion dans le bandeau commun. |
+| Déconnexion | POST protégé par CSRF, invalidation de la session, suppression du cookie, retour à `/login`. |
+| Profils | `AGENT` et `RESPONSABLE_EXPLOITATION`. Aucune différence de droits inventée en l'absence d'exigence. |
+| Nom et prénom des programmeurs | Obligatoires, non blancs, 100 caractères maximum, en cohérence avec les colonnes existantes. |
+| Autres champs textuels | Facultatifs ; adresse limitée à 255 caractères, langage à 100, livre à 150, conformément au schéma. |
+| Salaire | Facultatif, fini et positif ou nul. Le refus des valeurs négatives est une hypothèse explicite du projet, à confirmer si le sujet évolue. Aucune devise ou périodicité n'est supposée. |
+| Création | Génère un nouvel identifiant ; un identifiant envoyé par le client ne peut pas écraser une ligne. |
+| Modification | Conserve l'identifiant de l'URL et n'autorise que les champs du formulaire. |
+| Ressource inexistante | Réponse 404 pour la lecture, la modification et la suppression. Une modification ne crée pas une ligne manquante. |
+| Saisie invalide | Le formulaire conserve les valeurs saisies et affiche les erreurs ; la base reste inchangée. |
+| Liste vide | État vide explicite et lien pour créer le premier programmeur. |
 
-## 5.5 – 5.6 Syntaxe, attributs
-- Template = HTML + attributs `th:*`, interprétés côté serveur.
-- `th:*` ou `data-th-*` : équivalents. La 2e forme est du HTML5 valide.
-- `${...}` : expression évaluée sur le Model.
-- `xmlns:th` : facultatif, utile à l'IDE.
+## Architecture et points du cours
 
-## 5.7 Templates à créer
-- listeProgrammeurs.html, detailsProgrammeur.html, nouveauProgrammeur.html.
+- Les contrôleurs traitent les requêtes HTTP et préparent les modèles de vues.
+- Les services portent les opérations applicatives et les limites transactionnelles.
+- Les interfaces de repository délèguent la persistance à Spring Data JPA.
+- Les entités utilisent les annotations Jakarta Persistence et Jakarta Validation.
+- Thymeleaf utilise les modèles, le binding des formulaires et des fragments communs.
+- `HiddenHttpMethodFilter` permet les modifications PUT et suppressions DELETE depuis des formulaires HTML.
+- Le schéma Post/Redirect/Get évite de rejouer une écriture lors du rafraîchissement après succès.
+- Le dirty checking JPA enregistre la modification de l'entité gérée dans la transaction.
 
-## 5.8 Affichage d'un seul programmeur
-- Comment `Model` arrive dans la méthode : il suffit de le déclarer en paramètre. Spring le fournit.
-- Ajouter une donnée : `model.addAttribute("nom", valeur)`.
-- Lien avec `${...}` : le 1er paramètre d'addAttribute = le nom retrouvé dans l'expression. `addAttribute("programmeurs", liste)` → `${programmeurs}`.
-- `${programmeur.nom}` appelle `getNom()`.
-- Prénom du dernier programmeur : `liste.get(liste.size() - 1).getPrenom()`. Attention : liste vide → exception.
-- Template : `<span th:text="${prenomDernierProgrammeur}"></span>`.
-- Étape intermédiaire : laissée en commentaire dans le code.
+## Clean Code
 
-## 5.9 Affichage des programmeurs
-- Trois éléments :
-  - contrôleur : récupère la liste (service) et la met dans le Model ;
-  - contrôleur : renvoie le nom du template (`"listeProgrammeurs"`, sans `.html`) ;
-  - template : parcourt la liste avec `th:each`.
-- `th:each="programmeur : ${programmeurs}"` : répète la balise (`<tr>`) pour chaque élément. `programmeur` = élément courant.
-- `th:text` : affiche la valeur, HTML échappé.
+Les anciennes versions commentées des contrôleurs, services et écrans ont été retirées du code actif et conservées dans l'historique Git et les notes du TP.
+Les dépendances applicatives sont injectées par constructeur et conservées dans des champs `final`.
+Les modifications de propriétés sont explicites plutôt qu'effectuées par copie réflexive de toutes les propriétés.
+Les champs HTML sont partagés dans un fragment unique, et le bandeau utilisateur dans un autre.
+Les logs utilisent SLF4J ; les messages techniques ne sont pas montrés à l'utilisateur.
+Les tests d'authentification et de CRUD sont séparés et partagent un support HTTP de test, sans héritage métier artificiel.
 
-### 5.9.1 Squelette HTML
-- Fait : une ligne `<tr>` par programmeur, une colonne par attribut.
-- Noms utilisés : attributs de la classe Java (`langageExpertise`, `livrePrefere`), pas les colonnes SQL.
+## SOLID : principes appliqués et limites justifiées
 
-### 5.9.2 Bootstrap
-- Fait : `<link>` Bootstrap dans le `<head>`. Classes `table`, `table-striped`, `btn`...
+### SRP — responsabilité unique : appliqué
 
-## 5.10 Suppression
+`ProgrammeurControleur` peut changer si le parcours HTTP évolue ; `ProgrammeurService` si les opérations applicatives évoluent ; `ProgrammeurRepository` si les besoins d'accès aux données évoluent.
+`GlobalExceptionHandler` centralise la traduction des exceptions en pages et statuts HTTP.
+Les vues ne réalisent aucune requête SQL. Les services ne choisissent aucun template HTML.
+Ces responsabilités ont des raisons de changement différentes et restent séparées.
 
-### 5.10.1 Bouton "Supprimez"
-- Bouton dans un `<form>` par ligne du tableau. URL construite avec `@{/programmeurs/{id}(id=...)}`.
+### DIP — inversion des dépendances : appliqué
 
-### 5.10.2 Que se passe-t-il au clic ? Cause ?
-- Erreur 405 Method Not Allowed.
-- Cause : le formulaire HTML n'envoie que GET ou POST. La route du contrôleur n'accepte que DELETE.
-- Un client HTTP (IntelliJ) peut envoyer DELETE. Pas un formulaire de navigateur.
+`ProgrammeurService` dépend de l'interface `ProgrammeurRepository`, pas d'une implémentation JDBC écrite dans le service.
+Spring fournit l'implémentation au constructeur. Les contrôleurs ne construisent pas leurs propres services ou connexions SQL.
+L'authentification s'appuie également sur les contrats `UserDetailsService`, `UserDetailsPasswordService` et `PasswordEncoder` de Spring Security.
+Changer le mécanisme de hachage n'impose pas de modifier le contrôleur ou le formulaire de connexion.
 
-### Note technique 3 – HiddenHttpMethodFilter
-- Filtre de Spring MVC.
-- Sur une requête POST, lit le paramètre `_method`.
-- Si la valeur est PUT, PATCH ou DELETE : la requête est présentée à Spring avec cette méthode.
-- Le contrôleur voit donc un vrai DELETE ou PUT.
-- Formulaire : `method="POST"` + `<input type="hidden" name="_method" value="DELETE">`.
-- Raccourci Thymeleaf : `th:method="DELETE"` génère les deux.
-- Activation (désactivé par défaut) : `spring.mvc.hiddenmethod.filter.enabled=true` dans application.properties.
+### OCP — ouvert/fermé : pas de mécanisme métier supplémentaire
 
-### 5.10.3 Solution + redirection
-- Filtre activé + `th:method="DELETE"`.
-- Contrôleur : `return "redirect:/programmeurs"`.
-- Redirection : réponse 302 + en-tête `Location`. Le navigateur refait un GET /programmeurs.
-- Pourquoi pas `return "listeProgrammeurs"` directement :
-  - la liste n'est pas dans le Model → page vide ou erreur ;
-  - l'URL affichée resterait celle de l'action (/programmeurs/12) ;
-  - F5 rejouerait la suppression.
-- Pattern : Post / Redirect / Get.
-- Id inexistant : `ResponseStatusException` 404.
+Le framework offre déjà des points d'extension (encodeurs de mots de passe, repositories, gestionnaires d'erreurs).
+Le domaine actuel ne comporte pas plusieurs stratégies de calcul ou variantes de traitement.
+Ajouter une hiérarchie de stratégies uniquement pour illustrer OCP compliquerait le code sans besoin identifié.
+Si plusieurs variantes métier apparaissent, leur point de variation pourra être extrait dans une interface.
 
-## 5.11 Ajout
+### LSP — substitution de Liskov : pas de hiérarchie métier à introduire
 
-### 5.11.1 Bouton "Ajoutez"
-- Liste : formulaire GET vers `/programmeurs/nouveau`.
-- Contrôleur : met un `Programmeur` vide dans le Model (`nouveauProgrammeur`) → template `nouveauProgrammeur`.
-- Template : `th:object="${nouveauProgrammeur}"` + `th:field="*{nom}"`, etc.
-- Bouton "Enregistrez" : POST vers `/programmeurs`.
+Les entités métier ne sont pas organisées en sous-classes interchangeables.
+Créer des sous-types artificiels n'aiderait pas à satisfaire les règles actuellement connues.
+Les contrats des interfaces du framework sont respectés, notamment les valeurs de retour et exceptions de `UserDetailsService`.
+Cela ne constitue pas une preuve générale de tous les contrats LSP possibles du framework.
 
-### 5.11.2 Succès → liste actualisée
-- `@ModelAttribute` (et non `@RequestBody`) : le formulaire envoie `nom=valeur&...`, pas du JSON.
-- Noms des champs = noms des attributs de `Programmeur`.
-- Service : `ajouterProgrammeur`. Puis `redirect:/programmeurs`.
-- Le service force l'id à null : POST crée toujours.
+### ISP — ségrégation des interfaces : pas de découpage supplémentaire pertinent
 
-## 5.12 Modification
+Les dépôts sont déjà séparés par entité, et les services ne dépendent pas d'un service universel regroupant toutes les fonctionnalités.
+Spring Security sépare notamment la lecture d'un compte et la mise à jour de son mot de passe en deux interfaces.
+Ajouter des wrappers reproduisant chaque méthode de `JpaRepository` n'apporterait pas de valeur dans ce petit périmètre.
+Un découpage supplémentaire deviendrait pertinent si des consommateurs avaient des besoins nettement différents.
 
-### 5.12.1 Bouton "Modifiez"
-- Liste : formulaire GET vers `/programmeurs/{id}`.
-- Contrôleur : charge le programmeur → Model (`programmeurToUpdate`) → template `detailsProgrammeur`.
-- Formulaire prérempli : `th:object` + `th:field` (génère `value`).
-- Validation : POST + `_method=PUT` (`th:method="PUT"`), vers `/programmeurs/{id}`.
+## Fonctionnalités transverses réalisées
 
-### 5.12.2 Succès → liste actualisée
-- `@PutMapping("/{id}")` avec `@ModelAttribute`.
-- Service : `modifierProgrammeur` (@Transactional).
-- Puis `redirect:/programmeurs`.
-- Id inexistant : 404.
+### 1. Sécurité et contexte de session
 
-## Remarques
-- Salaire : `<input type="number" step="any">`. Le navigateur envoie un point décimal. Avec `type="text"`, "45000,5" → erreur de conversion (400).
-- `server.error.include-message=always` : affiche le message du 404 dans la page d'erreur.
-- Les routes restent celles de 4.8 (REST) : seules les routes de formulaires s'ajoutent (`/nouveau`).
-- Le service n'a pas changé : seuls les commentaires ont été enrichis.
+- Contrôle d'accès commun aux routes privées, indépendamment du contrôleur.
+- Connexion par formulaire, message d'échec, session HTTP et déconnexion.
+- Protection CSRF des formulaires d'écriture et de déconnexion.
+- Rotation de l'identifiant de session après connexion et invalidation après déconnexion.
+- Bandeau partagé via un fragment et un `ControllerAdvice`.
+- BCrypt pour les mots de passe ; migration des anciens mots de passe en clair seulement après une identification réussie.
 
-## Routes finales
-- GET /programmeurs → listeProgrammeurs
-- GET /programmeurs/nouveau → nouveauProgrammeur
-- GET /programmeurs/{id} → detailsProgrammeur
-- POST /programmeurs → ajout, redirection
-- PUT /programmeurs/{id} → modification, redirection (via `_method`)
-- DELETE /programmeurs/{id} → suppression, redirection (via `_method`)
+Cette fonctionnalité traverse les contrôleurs et les pages. La protection CSRF n'est pas comptée comme une deuxième fonctionnalité séparée de la sécurité.
+
+### 2. Validation et gestion homogène des erreurs
+
+- Contraintes Jakarta Validation sur les données ; validation au niveau des formulaires et du service.
+- Messages français par champ, réaffichage de la saisie et absence d'écriture en cas d'erreur.
+- Gestion centralisée des ressources inexistantes, paramètres invalides, conflits de données et erreurs inattendues.
+- Conservation des statuts HTTP 400, 403, 404, 405, 409 et 500 selon le cas.
+- Page d'erreur commune, lien de retour et bandeau utilisateur si une session est ouverte.
+- Masquage des détails SQL, messages internes et traces techniques dans les réponses.
+
+La validation ne dépend pas du seul JavaScript du navigateur ; elle reste active pour une requête HTTP fabriquée manuellement.
+Le regroupement validation/erreurs constitue ici la deuxième fonctionnalité transverse retenue, en l'absence d'une liste plus précise fournie par le sujet.
+
+### Diagnostic technique complémentaire
+
+Les opérations du service sont journalisées avec leurs identifiants, sans enregistrer les mots de passe ou les formulaires complets dans ces messages.
+Ces logs facilitent le diagnostic ; ce ne sont pas un journal d'audit métier persistant ni une preuve de commit transactionnel.
+
+## Frontend et ergonomie
+
+- Page de connexion Bootstrap, identité visuelle Rail Pulse, libellés et autocomplétion adaptés.
+- Bouton d'affichage du mot de passe utilisable au clavier.
+- Bandeau identique sur les pages privées et pages d'erreur.
+- Formulaires sur une colonne mobile et deux colonnes lorsque la largeur le permet.
+- Champs obligatoires identifiés, erreurs associées aux champs et messages de succès.
+- Fil d'Ariane, annulation, liste vide explicite et tableau à défilement horizontal.
+- Confirmation avant suppression ; le serveur conserve la protection CSRF même si JavaScript est désactivé.
+
+## Vérification de la solution
+
+Commande complète : `./mvnw.cmd verify` sous Windows, avec Java 21.
+Les tests HTTP démarrent un vrai serveur sur un port aléatoire et utilisent un cookie de session par client.
+Ils s'exécutent sur une base H2 en mémoire, sans toucher à MySQL.
+
+| Suite | Vérifications principales |
+|---|---|
+| `RailPulseApplicationTests` | Page publique, routes privées, erreurs de connexion, deux profils, formats de mots de passe, migration BCrypt, rotation de session, déconnexion, ancien cookie refusé, CSRF, bandeau et déconnexion depuis chaque page. |
+| `ProgrammeurIntegrationTests` | Création/modification/suppression effectivement persistées, identifiants falsifiés, messages de succès, champs facultatifs, zéro accepté, champs manquants/trop longs, salaire négatif/invalide/non fini, conservation de la saisie et des données, ressource absente, paramètres et méthodes invalides, liste vide, validation du service et CSRF. |
+| `GlobalExceptionHandlerTest` | Messages d'erreur sûrs, conflit de données, statut HTTP conservé et détails internes masqués. |
+
+Le rapport [JaCoCo](https://www.jacoco.org/jacoco/trunk/doc/maven.html) est généré dans `target/site/jacoco/index.html` par `verify`.
+Vérification du 14/10/2026 : **20 tests réussis**, construction du JAR réussie, **80,8 % des lignes** et **44,2 % des branches** Java couvertes.
+Les lignes des services d'authentification et de programmeurs et du contrôleur de programmeurs ont été exécutées intégralement, sans que cela constitue une preuve de tous leurs comportements.
+La couverture restante concerne principalement le démarrage du service MySQL Windows et quelques accesseurs de l'entité utilisateur ; aucun test n'a été ajouté uniquement pour augmenter un pourcentage.
+La couverture mesure du code Java exécuté : elle ne prouve ni la justesse de toutes les règles ni le rendu visuel des écrans.
+H2 ne remplace pas une vérification sur MySQL. Le démarrage automatique du service Windows nécessite un contrôle sur la machine de démonstration et n'est pas lancé par les tests isolés.
+
+## Traçabilité
+
+| Date | Étape | Référence |
+|---|---|---|
+| 12/10/2026 | Renommage Rail Pulse, configuration IntelliJ et démarrage local MySQL | `02ff542` |
+| 14/10/2026 | Connexion JPA au MySQL local | `1e35c1c` |
+| 14/10/2026 | Modèle utilisateur et écran Bootstrap | `b3eae54` |
+| 14/10/2026 | Authentification, fermeture de session et tests HTTP | `309716d` |
+| 14/10/2026 | Bandeau commun et déconnexion depuis chaque page | `b416d3a` |
+| 14/10/2026 | Validation, erreurs centralisées, nettoyage, formulaires et tests CRUD | `85c6c74` |
+| 14/10/2026 | Documentation SOLID, bilan d'évaluation et rapport de couverture | Voir le commit correspondant dans `git log`. |
+
+Les commits attestent les étapes enregistrées, pas un temps de travail ou une répartition entre membres.
+L'assistance Codex a été utilisée pour la mise en œuvre et la vérification. L'autonomie du groupe reste à démontrer par la compréhension du code, la reproduction des tests et l'explication des choix lors de la présentation.
+
+## Contrôles manuels avant présentation
+
+1. Démarrer sur la machine prévue et vérifier la connexion à MySQL.
+2. Se connecter avec un compte de chacun des deux profils.
+3. Vérifier le bandeau, une erreur de saisie, une création, une modification et une suppression.
+4. Vérifier l'annulation de la confirmation de suppression.
+5. Se déconnecter et tenter de rouvrir une page privée.
+6. Examiner les écrans sur mobile et au clavier, ainsi que le chargement du CSS Bootstrap.
+7. Présenter les résultats Maven, le rapport de couverture et les commits.
+
+L'accessibilité complète, les différences H2/MySQL, la charge et la compatibilité de tous les navigateurs ne sont pas certifiées par les seuls tests présents.
