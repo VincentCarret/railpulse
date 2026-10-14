@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
                 "spring.datasource.username=${TEST_DB_USERNAME:sa}", "spring.datasource.password=${TEST_DB_PASSWORD:}",
                 "spring.jpa.properties.hibernate.default_schema=${TEST_DB_SCHEMA:public}",
                 "spring.sql.init.mode=${TEST_DB_INIT:never}",
+                "spring.sql.init.schema-locations=classpath:db/supabase-schema.sql",
                 "spring.jpa.hibernate.ddl-auto=create-drop", "spring.jpa.show-sql=false"
         })
 abstract class WebIntegrationTestSupport {

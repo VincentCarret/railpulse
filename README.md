@@ -7,7 +7,7 @@ Application Spring Boot avec Java 21, Maven, Thymeleaf et PostgreSQL/Supabase.
 Ouvrir ce dossier comme projet et recharger Maven depuis `pom.xml` (Reload All Maven Projects).
 Le SDK du projet est Java 21, installé ici dans `C:\Users\vincc\.jdks\ms-21.0.12.1`.
 Lancer `RailPulseApplication` dans le package `altn72.railpulse`.
-Le profil par défaut est `supabase`. Configurer les identifiants PostgreSQL avant le lancement, selon le [guide Supabase](docs/supabase.md).
+Le profil par défaut est `mysql` pour permettre le lancement local habituel. Pour Supabase, sélectionner **Rail Pulse - Supabase** ou définir `SPRING_PROFILES_ACTIVE=supabase`, puis configurer les identifiants PostgreSQL selon le [guide Supabase](docs/supabase.md).
 
 ## Compilation sous PowerShell
 
@@ -20,7 +20,7 @@ Pour Supabase, renseigner `SUPABASE_DB_PASSWORD` et éventuellement `SUPABASE_DB
 Une clé API `sb_secret_*` ne remplace pas le mot de passe PostgreSQL.
 Les tables JPA sont créées dans le schéma dédié `railpulse` ; les comptes et données de l'ancienne base MySQL ne sont pas automatiquement transférés.
 
-L'ancienne configuration MySQL reste disponible avec le profil `mysql` (`SPRING_PROFILES_ACTIVE=mysql`). Elle utilise `localhost:3305/Base_ALTN72` et peut démarrer le service Windows `MySQL95` si nécessaire.
+La configuration locale par défaut utilise le profil `mysql`, `localhost:3305/Base_ALTN72` et peut démarrer le service Windows `MySQL95` si nécessaire.
 Les tests utilisent par défaut une base H2 temporaire en mode PostgreSQL et ne modifient ni Supabase ni MySQL : `.\mvnw.cmd test`.
 
 ## Connexion et déconnexion

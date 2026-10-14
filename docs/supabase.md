@@ -4,10 +4,11 @@ L'application utilise PostgreSQL via JDBC et Spring Data JPA. Elle ne passe pas 
 
 ## Paramètres
 
-Le profil `supabase` est activé par défaut. Les mêmes variables peuvent être renseignées localement, dans IntelliJ ou avec les secrets du futur déploiement CI/CD.
+Activer le profil `supabase` avec la configuration IntelliJ dédiée ou `SPRING_PROFILES_ACTIVE=supabase`. Le profil par défaut reste `mysql` pour le développement local tant que la connexion distante n'est pas configurée. Les mêmes variables peuvent être renseignées localement, dans IntelliJ ou avec les secrets du futur déploiement CI/CD.
 
 | Variable | Valeur |
 |---|---|
+| `SPRING_PROFILES_ACTIVE` | `supabase` pour activer la configuration distante, notamment dans le CI/CD. |
 | `SUPABASE_DB_PASSWORD` | Mot de passe de la base PostgreSQL, obligatoire pour une connexion réelle. |
 | `SUPABASE_DB_URL` | URL JDBC avec SSL. Par défaut : `jdbc:postgresql://db.aehaxzwjhtkhqttvvqrd.supabase.co:5432/postgres?sslmode=require&connectTimeout=10&socketTimeout=30`. |
 | `SUPABASE_DB_USERNAME` | `postgres` en connexion directe ; reprendre la valeur exacte du tableau de bord pour le pooler. |
@@ -56,7 +57,7 @@ $env:SUPABASE_DB_PASSWORD = [System.Net.NetworkCredential]::new('', $supabasePas
 .\mvnw.cmd spring-boot:run
 ```
 
-Au déploiement, injecter les trois variables depuis le gestionnaire de secrets du CI/CD. Aucun pipeline n'est créé par cette configuration.
+Au déploiement, activer le profil `supabase` et injecter les variables de connexion depuis le gestionnaire de secrets du CI/CD. Aucun pipeline n'est créé par cette configuration.
 
 ## Schéma et comptes de l'application
 
