@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import altn72.railpulse.modele.Profil;
 import altn72.railpulse.modele.User;
 import altn72.railpulse.modele.UserRepository;
+import altn72.railpulse.modele.Programmeur;
+import altn72.railpulse.modele.ProgrammeurRepository;
 
 import java.net.URI;
 import java.net.CookieManager;
@@ -48,6 +50,9 @@ class RailPulseApplicationTests {
 
     @Autowired
     private PasswordEncoder passwords;
+
+    @Autowired
+    private ProgrammeurRepository programmeurs;
 
     @Value("${local.server.port}")
     private int port;
@@ -152,6 +157,35 @@ class RailPulseApplicationTests {
             assertRedirect(login(client, user.getLogin(), PASSWORD), "/");
             assertEquals(403, post(client, "/logout", Map.of()).statusCode());
             assertEquals(200, get(client, "/").statusCode());
+        }
+    }
+
+    @Test
+    void everyPrivatePageShowsTheUserAndItsLogoutFormWorksForBothProfiles() throws Exception {
+        Programmeur programmeur = new Programmeur();
+        programmeur.setNom("Test");
+        programmeur.setPrenom("Exemple");
+        programmeur = programmeurs.save(programmeur);
+        try {
+            for (Profil profil : Profil.values()) {
+                User user = createUser(profil, passwords.encode(PASSWORD));
+                for (String path : List.of("/", "/programmeurs", "/programmeurs/nouveau", "/programmeurs/" + programmeur.getId())) {
+                    try (HttpClient client = browser()) {
+                        assertRedirect(get(client, path), "/login");
+                        assertRedirect(login(client, user.getLogin(), PASSWORD), "/");
+                        HttpResponse<String> page = get(client, path);
+                        assertEquals(200, page.statusCode(), path);
+                        assertTrue(page.body().contains("Bonjour Camille (" + profil.name() + ")"), path);
+                        assertTrue(page.body().contains("Déconnectez-vous"), path);
+                        assertTrue(page.body().contains("action=\"/logout\""), path);
+                        assertEquals(200, get(client, "/css/style.css").statusCode());
+                        assertRedirect(post(client, "/logout", Map.of("_csrf", csrf(page.body()))), "/login?logout");
+                        assertRedirect(get(client, path), "/login");
+                    }
+                }
+            }
+        } finally {
+            programmeurs.delete(programmeur);
         }
     }
 

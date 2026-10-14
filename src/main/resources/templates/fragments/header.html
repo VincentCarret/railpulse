@@ -3,16 +3,13 @@
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<header th:fragment="header" class="header">
-    <div class="utilisateur">
-        Bonjour
-        <span th:text="${prenom}"></span>
-        (<span th:text="${profil}"></span>)
-
-        |
-
-        <form th:action="@{/logout}" method="post">
-            <button type="submit">Déconnectez-vous</button>
+<header th:fragment="header" class="app-header" th:if="${prenom != null}">
+    <a class="app-brand" th:href="@{/}" aria-label="Rail Pulse, accueil">rail<span>pulse</span><span class="brand-dot" aria-hidden="true">•</span></a>
+    <div class="user-session" aria-label="Votre session">
+        <span class="user-greeting" th:text="|Bonjour ${prenom} (${profil})|"></span>
+        <span class="session-separator" aria-hidden="true">|</span>
+        <form class="logout-form" th:action="@{/logout}" method="post">
+            <button class="logout-button" type="submit">Déconnectez-vous</button>
         </form>
     </div>
 </header>
