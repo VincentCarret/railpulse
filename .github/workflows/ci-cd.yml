@@ -1,0 +1,66 @@
+name: CI / CD
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: Base_ALTN72
+          MYSQL_ROOT_PASSWORD: test_password
+        ports:
+          - 3305:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -ptest_password"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Test and package with MySQL
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3305/Base_ALTN72
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: test_password
+        run: bash ./mvnw -B verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: railpulse-jar
+          path: target/railpulse-*.jar
+          if-no-files-found: error
+
+      - name: Deploy to VPS
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.DEPLOY_ENABLED == 'true'
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$VPS_HOST" && test -n "$VPS_USER" && test -n "$VPS_SSH_KEY" && test -n "$VPS_KNOWN_HOSTS"
+          port="${VPS_PORT:-22}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          scp -P "$port" -o StrictHostKeyChecking=yes target/railpulse-*.jar "$VPS_USER@$VPS_HOST:/opt/railpulse/railpulse.jar.new"
+          ssh -p "$port" -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" \
+            'mv /opt/railpulse/railpulse.jar.new /opt/railpulse/railpulse.jar && sudo /usr/bin/systemctl restart railpulse'
