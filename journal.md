@@ -28,6 +28,42 @@ Aucune règle supplémentaire sur des équipements ou incidents ferroviaires n'a
 
 ## Architecture et points du cours
 
+### Vue d'ensemble
+
+Rail Pulse suit une architecture en couches de type MVC enrichie par une couche de service et une couche de persistance. Une requête traverse les composants dans cet ordre : navigateur, contrôleur Spring MVC, service métier, repository Spring Data JPA, base de données. La réponse revient ensuite vers le contrôleur, qui fournit un modèle à Thymeleaf pour produire la page HTML.
+
+```text
+Navigateur
+    │ HTTP / formulaire / session
+    ▼
+Contrôleurs MVC ──► Services applicatifs ──► Repositories JPA ──► PostgreSQL Supabase
+    │                      │                       │
+    └──────────────► Modèles Thymeleaf       Entités JPA
+```
+
+Le contrôleur ne contient ni requête SQL ni règle de validation métier complexe. Le service orchestre l'opération et définit la transaction. Le repository fournit l'accès aux données. Cette séparation permet de tester chaque responsabilité et de changer le moteur de base sans réécrire les écrans.
+
+### Responsabilités des couches
+
+- Présentation : `ProgrammeurControleur` reçoit les requêtes, valide les formulaires et prépare le modèle. Les templates Thymeleaf affichent les données ; les fragments partagent le bandeau et les champs communs.
+- Sécurité : `SecurityConfig` protège les routes privées, gère `/login`, la déconnexion POST et CSRF. `AuthService` adapte les utilisateurs au contrat Spring Security et compare les mots de passe BCrypt.
+- Application : `ProgrammeurService` orchestre les cas d'utilisation CRUD, vérifie l'existence des ressources et délimite les transactions.
+- Domaine : `Programmeur`, `User` et `Profil` décrivent les données et leurs contraintes métier.
+- Persistance : `ProgrammeurRepository` et `UserRepository` sont des interfaces Spring Data JPA. Le profil `supabase` utilise PostgreSQL dans le schéma `railpulse`, tandis que `mysql` conserve la base locale.
+
+### Flux de connexion
+
+1. Le navigateur demande `/login`, seule page publique.
+2. Spring Security délègue la recherche du compte à `AuthService`.
+3. Le mot de passe est comparé au hash BCrypt stocké dans `railpulse.users`.
+4. En cas d'échec, le formulaire est réaffiché avec un message générique.
+5. En cas de succès, la session est renouvelée et le bandeau affiche le prénom et le profil.
+6. La déconnexion invalide la session et redirige vers `/login`.
+
+### Flux CRUD
+
+Un formulaire POST passe par Jakarta Validation puis par `ProgrammeurService`. Le service enregistre l'entité dans une transaction via JPA ; le contrôleur redirige ensuite vers la liste selon le schéma Post/Redirect/Get. Les identifiants sont pris depuis l'URL et les ressources absentes renvoient 404. `GlobalExceptionHandler` transforme les erreurs attendues en pages et statuts HTTP cohérents.
+
 - Les contrôleurs traitent les requêtes HTTP et préparent les modèles de vues.
 - Les services portent les opérations applicatives et les limites transactionnelles.
 - Les interfaces de repository délèguent la persistance à Spring Data JPA.
