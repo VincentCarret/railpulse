@@ -6,11 +6,13 @@ import altn72.railpulse.modele.UserRepository;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class AuthService implements UserDetailsService {
+public class AuthService implements UserDetailsService, UserDetailsPasswordService {
 
     private final UserRepository userRepository;
 
@@ -27,11 +29,31 @@ public class AuthService implements UserDetailsService {
                         "Utilisateur introuvable"
                 ));
 
+        return toUserDetails(user);
+    }
+
+    private UserDetails toUserDetails(User user) {
+        String password = user.getPassword();
+        // Existing SQL accounts may contain plain text or BCrypt without its Spring prefix.
+        // DaoAuthenticationProvider upgrades them after a successful password check.
+        if (password.startsWith("$2")) {
+            password = "{bcrypt}" + password;
+        } else if (!password.startsWith("{")) {
+            password = "{noop}" + password;
+        }
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getLogin())
-                .password(user.getPassword())
+                .password(password)
                 .roles(user.getProfil().name())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public UserDetails updatePassword(UserDetails userDetails, String newPassword) {
+        User user = getUserByLogin(userDetails.getUsername());
+        user.setPassword(newPassword);
+        return toUserDetails(userRepository.save(user));
     }
 
     public User getUserByLogin(String login) {
