@@ -37,7 +37,8 @@ Référence : [documentation officielle des connexions Supabase](https://supabas
 
 Copier `config/supabase-local.properties.example` vers `config/supabase-local.properties`, puis remplir le mot de passe et les éventuels paramètres de pooler.
 Le second fichier est ignoré par Git et chargé seulement par le profil Supabase.
-Les variables d'environnement priment sur les valeurs de ce fichier.
+Il permet de renseigner directement `spring.datasource.url`, `spring.datasource.username` et `spring.datasource.password` en dur pour le développement local. Remplacer le marqueur de mot de passe par le vrai mot de passe PostgreSQL.
+Pour utiliser ensuite les variables `SUPABASE_DB_*`, retirer ces trois entrées directes du fichier local ou ne pas déployer ce fichier. Les variables standard `SPRING_DATASOURCE_*` peuvent aussi surcharger directement ces propriétés.
 
 Dans IntelliJ, lancer le projet avec son dossier racine comme répertoire de travail. Les variables peuvent aussi être renseignées dans **Run > Edit Configurations > Environment variables**.
 Recharger Maven pour récupérer le pilote PostgreSQL.
