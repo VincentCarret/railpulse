@@ -17,6 +17,11 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
             + "left join fetch i.prestataire where i.id = :id")
     Optional<Incident> rechercherDetail(@Param("id") Long id);
 
+    @Query("select i from Incident i join fetch i.equipement e join fetch e.station "
+            + "left join fetch i.prestataire where i.statut = :statut "
+            + "order by i.dateResolution desc, i.id desc")
+    List<Incident> rechercherParStatutEtDateResolutionDecroissante(@Param("statut") StatutIncident statut);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from Incident i where i.id = :id")
     Optional<Incident> verrouillerPourModification(@Param("id") Long id);

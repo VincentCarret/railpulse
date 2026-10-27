@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Historique des incidents résolus · Rail Pulse</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="container page-content">
+    <nav aria-label="Fil d'Ariane" class="mb-4"><a th:href="@{/}">Accueil</a> / <span aria-current="page">Historique</span></nav>
+    <p class="section-label">SUIVI DES INCIDENTS</p>
+    <h1>Historique des incidents résolus</h1>
+    <p class="text-secondary">Du plus récent au plus ancien selon la date de résolution. Horaires en UTC.</p>
+    <p th:if="${#lists.isEmpty(incidents)}" class="alert alert-info" role="status">Aucun incident résolu pour le moment.</p>
+    <div th:unless="${#lists.isEmpty(incidents)}" class="table-responsive table-card" tabindex="0"
+         aria-label="Historique des incidents, défilement horizontal possible">
+        <table class="table align-middle mb-0">
+            <caption class="visually-hidden">Incidents résolus triés par date de résolution décroissante.</caption>
+            <thead><tr><th scope="col">Incident</th><th scope="col">Station</th><th scope="col">Équipement</th>
+                <th scope="col">Description</th><th scope="col">Prestataire</th>
+                <th scope="col">Ouverture (UTC)</th><th scope="col">Résolution (UTC)</th></tr></thead>
+            <tbody>
+            <tr th:each="incident : ${incidents}">
+                <th scope="row"><a th:href="@{/incidents/{id}(id=${incident.id})}" th:text="|#${incident.id}|"
+                                   th:attr="aria-label=|Consulter le détail de l'incident ${incident.id}|"></a></th>
+                <td th:text="${incident.equipement.station.nom}"></td>
+                <td><a th:href="@{/equipements/{id}(id=${incident.equipement.id})}" th:text="${incident.equipement.reference}"></a></td>
+                <td class="incident-description" th:text="${incident.description}"></td>
+                <td th:text="${incident.prestataire != null ? incident.prestataire.nom : 'Non affecté'}"></td>
+                <td class="text-nowrap" th:text="${#temporals.format(incident.dateOuverture, 'dd/MM/yyyy HH:mm')}"></td>
+                <td class="text-nowrap" th:text="${#temporals.format(incident.dateResolution, 'dd/MM/yyyy HH:mm')}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <a class="btn btn-outline-secondary mt-4" th:href="@{/}">Retour à l'accueil</a>
+</main>
+</body>
+</html>
