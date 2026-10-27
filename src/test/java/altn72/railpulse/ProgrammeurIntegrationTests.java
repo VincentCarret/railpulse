@@ -17,8 +17,8 @@ class ProgrammeurIntegrationTests extends WebIntegrationTestSupport {
         createProgrammeur("Zola", "Zoé");
         createProgrammeur("Martin", "Zoé");
         createProgrammeur("Martin", "Anne");
-        assertEquals(List.of("Anne", "Zoé", "Zoé"), programmeurService.getProgrammeurs().stream()
-                .map(Programmeur::getPrenom).toList());
+        assertEquals(List.of("Martin Anne", "Martin Zoé", "Zola Zoé"), programmeurService.getProgrammeurs().stream()
+                .map(programmeur -> programmeur.getNom() + " " + programmeur.getPrenom()).toList());
     }
 
     @Test
