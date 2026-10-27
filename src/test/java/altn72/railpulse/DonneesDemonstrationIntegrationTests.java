@@ -7,6 +7,7 @@ import altn72.railpulse.modele.StationRepository;
 import altn72.railpulse.modele.IncidentRepository;
 import altn72.railpulse.modele.PrestataireRepository;
 import altn72.railpulse.modele.StatutIncident;
+import altn72.railpulse.modele.EvaluationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
@@ -34,6 +35,9 @@ class DonneesDemonstrationIntegrationTests extends WebIntegrationTestSupport {
     @Autowired
     private PrestataireRepository prestataires;
 
+    @Autowired
+    private EvaluationRepository evaluations;
+
     @Test
     void leProfilDemoInitialiseUnCatalogueVarieSansLeDupliquerAuRedemarrage() {
         assertEquals(3, stations.count());
@@ -43,6 +47,7 @@ class DonneesDemonstrationIntegrationTests extends WebIntegrationTestSupport {
         assertEquals(3, incidents.findAll().stream().map(incident -> incident.getStatut()).distinct().count());
         var resolu = incidents.findAll().stream().filter(incident -> incident.getStatut() == StatutIncident.RESOLU).findFirst().orElseThrow();
         assertTrue(resolu.getDateResolution().isAfter(resolu.getDateOuverture()));
+        assertEquals(4, evaluations.findByIncidentId(resolu.getId()).orElseThrow().getNote());
         assertEquals(5, equipements.findAll().stream().map(Equipement::getType).distinct().count());
         assertEquals(3, equipements.findAll().stream().map(Equipement::getEtatFonctionnement).distinct().count());
         assertTrue(stations.findAll().stream()
@@ -54,6 +59,7 @@ class DonneesDemonstrationIntegrationTests extends WebIntegrationTestSupport {
         assertEquals(3, stations.count());
         assertEquals(5, incidents.count());
         assertEquals(1, prestataires.count());
+        assertEquals(1, evaluations.count());
         assertEquals(references, equipements.findAll().stream().map(Equipement::getReference).sorted().toList());
         assertEquals(0, users.count(), "Le profil demo ne crée aucun compte ni mot de passe.");
     }

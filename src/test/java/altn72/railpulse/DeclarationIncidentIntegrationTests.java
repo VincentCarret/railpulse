@@ -3,7 +3,7 @@ package altn72.railpulse;
 import altn72.railpulse.modele.Incident;
 import altn72.railpulse.modele.Profil;
 import altn72.railpulse.modele.StatutIncident;
-import altn72.railpulse.service.DeclarationIncident;
+import altn72.railpulse.service.DescriptionIncident;
 import altn72.railpulse.service.IncidentService;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
@@ -183,7 +183,7 @@ class DeclarationIncidentIntegrationTests extends CatalogueIntegrationTestSuppor
     @Test
     void laValidationDuServiceNePeutPasEtreContournee() {
         var equipement = creerEquipement("SERVICE-01");
-        DeclarationIncident declaration = new DeclarationIncident();
+        DescriptionIncident declaration = new DescriptionIncident();
         assertThrows(ConstraintViolationException.class, () -> incidentService.declarer(equipement.getId(), declaration));
         declaration.setDescription(" ");
         assertThrows(ConstraintViolationException.class, () -> incidentService.declarer(equipement.getId(), declaration));

@@ -87,6 +87,21 @@ public class Incident {
         this.statut = StatutIncident.RESOLU;
     }
 
+    public boolean isModifiable() {
+        return statut != StatutIncident.RESOLU;
+    }
+
+    public void verifierModifiable() {
+        if (!isModifiable()) {
+            throw new EtatIncidentInvalideException("La description d'un incident résolu ne peut plus être modifiée.");
+        }
+    }
+
+    public void modifierDescription(String description) {
+        verifierModifiable();
+        this.description = description.strip();
+    }
+
     public Long getId() {
         return id;
     }

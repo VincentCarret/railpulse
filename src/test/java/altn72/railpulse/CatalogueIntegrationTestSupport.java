@@ -4,6 +4,7 @@ import altn72.railpulse.modele.Equipement;
 import altn72.railpulse.modele.EquipementRepository;
 import altn72.railpulse.modele.EtatFonctionnement;
 import altn72.railpulse.modele.IncidentRepository;
+import altn72.railpulse.modele.EvaluationRepository;
 import altn72.railpulse.modele.PrestataireRepository;
 import altn72.railpulse.modele.Station;
 import altn72.railpulse.modele.StationRepository;
@@ -24,8 +25,12 @@ abstract class CatalogueIntegrationTestSupport extends WebIntegrationTestSupport
     @Autowired
     protected PrestataireRepository prestataires;
 
+    @Autowired
+    protected EvaluationRepository evaluations;
+
     @AfterEach
     void nettoyerCatalogue() {
+        evaluations.deleteAll();
         incidents.deleteAll();
         prestataires.deleteAll();
         equipements.deleteAll();

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|Modifier l'incident ${incident.id} · Rail Pulse|"></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="container page-content">
+    <nav aria-label="Fil d’Ariane" class="mb-4"><a th:href="@{/}">Accueil</a> /
+        <a th:href="@{/incidents/{id}(id=${incident.id})}" th:text="|Incident #${incident.id}|"></a> / Modification</nav>
+    <p class="section-label">SUIVI DES INCIDENTS</p>
+    <h1 th:text="|Modifier l'incident #${incident.id}|"></h1>
+    <p><strong th:text="${incident.equipement.reference}"></strong> · <span th:text="${incident.equipement.libelle}"></span> · <span th:text="${incident.equipement.station.nom}"></span></p>
+    <p class="text-secondary">La description d’un incident actif peut être corrigée. Les dates, le statut et l’affectation sont conservés.</p>
+    <form class="form-card" method="post" th:object="${modificationIncident}" th:action="@{/incidents/{id}(id=${incident.id})}">
+        <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">Aucune modification n’a été enregistrée. Corrigez les informations ci-dessous.</div>
+        <div th:replace="~{fragments/incident-description :: champs}"></div>
+        <div class="d-flex flex-wrap gap-3 mt-4">
+            <button type="submit" class="btn btn-success">Enregistrer les modifications</button>
+            <a class="btn btn-outline-secondary" th:href="@{/incidents/{id}(id=${incident.id})}">Annuler</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

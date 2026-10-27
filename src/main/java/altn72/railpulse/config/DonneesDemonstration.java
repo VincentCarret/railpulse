@@ -4,6 +4,8 @@ import altn72.railpulse.modele.Equipement;
 import altn72.railpulse.modele.EquipementRepository;
 import altn72.railpulse.modele.Incident;
 import altn72.railpulse.modele.IncidentRepository;
+import altn72.railpulse.modele.Evaluation;
+import altn72.railpulse.modele.EvaluationRepository;
 import altn72.railpulse.modele.Prestataire;
 import altn72.railpulse.modele.PrestataireRepository;
 import altn72.railpulse.modele.EtatFonctionnement;
@@ -28,14 +30,17 @@ public class DonneesDemonstration implements ApplicationRunner {
     private final IncidentRepository incidents;
     private final PrestataireRepository prestataires;
     private final Clock horloge;
+    private final EvaluationRepository evaluations;
 
     public DonneesDemonstration(StationRepository stations, EquipementRepository equipements,
-                               IncidentRepository incidents, PrestataireRepository prestataires, Clock horloge) {
+                               IncidentRepository incidents, PrestataireRepository prestataires, Clock horloge,
+                               EvaluationRepository evaluations) {
         this.stations = stations;
         this.equipements = equipements;
         this.incidents = incidents;
         this.prestataires = prestataires;
         this.horloge = horloge;
+        this.evaluations = evaluations;
     }
 
     @Override
@@ -77,5 +82,6 @@ public class DonneesDemonstration implements ApplicationRunner {
                 new Incident(ecran, "Affichage figé sur le quai.", maintenant.minusHours(48)),
                 new Incident(ecran, "Information voyageurs partiellement illisible.", maintenant.minusHours(72)),
                 affecte, resolu));
+        evaluations.save(new Evaluation(resolu, 4, "Intervention efficace et explications claires.", maintenant.minusHours(118)));
     }
 }

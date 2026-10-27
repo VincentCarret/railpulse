@@ -5,12 +5,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -30,7 +32,11 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/login", "/css/**", "/js/**", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/stations", "/stations/**", "/equipements/**")
+                        .requestMatchers(HttpMethod.GET, "/incidents/*/modifier")
+                        .hasRole("RESPONSABLE_EXPLOITATION")
+                        .requestMatchers(HttpMethod.POST, "/incidents/*")
+                        .hasRole("RESPONSABLE_EXPLOITATION")
+                        .requestMatchers(HttpMethod.GET, "/stations", "/stations/**", "/equipements/**", "/incidents/**")
                         .hasAnyRole("AGENT", "RESPONSABLE_EXPLOITATION")
                         .requestMatchers(HttpMethod.POST, "/equipements/*/incidents")
                         .hasAnyRole("AGENT", "RESPONSABLE_EXPLOITATION")

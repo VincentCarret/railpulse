@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="champs">
+    <label for="description" class="form-label">Description du problème *</label>
+    <textarea id="description" th:field="*{description}" class="form-control" rows="6" required
+              th:maxlength="${longueurDescriptionMax}" th:errorclass="is-invalid"
+              th:attr="aria-invalid=${#fields.hasErrors('description')},aria-describedby=${#fields.hasErrors('description') ? 'description-aide description-erreur' : 'description-aide'}"></textarea>
+    <p id="description-aide" class="form-text" th:text="|Champ obligatoire, ${longueurDescriptionMax} caractères maximum. Précisez les symptômes et leur localisation.|"></p>
+    <p id="description-erreur" class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+</div>
+</body>
+</html>

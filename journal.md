@@ -7,9 +7,9 @@ Le projet utilise Java 21, Spring Boot, Spring MVC, Thymeleaf, Spring Data JPA e
 Les explications du corrigé initial sont conservées dans [les notes du TP 5](docs/journal-tp5.md).
 
 Le sujet de référence est **ALTN72 — Projet final 2026-27**, notamment §5.2 (F2), §5.6 (droits), RG9, RG11 et §7 (architecture, persistance, tests).
-F1 (connexion/déconnexion), F2 (consultation des équipements par station), F3 (fiche équipement et liste de ses incidents) et F4 (déclaration d'un incident) sont réalisées.
+F1 à F6 sont réalisées : connexion, équipements par station, fiche équipement, déclaration, détail et modification autorisée d'un incident.
 Le CRUD de programmeurs provient du TP et sert de support aux formulaires, transactions et tests.
-Les fonctionnalités F5 à F12 ne sont pas encore réalisées.
+Les fonctionnalités F7 à F12 ne sont pas encore réalisées.
 Les instructions de configuration, de lancement et d'initialisation F2 sont dans le [README](README.md#f2--équipements-par-station).
 L'URL déployée, les comptes de démonstration et les noms du groupe restent à renseigner avant le rendu.
 
@@ -96,13 +96,13 @@ Les tests d'authentification et de CRUD sont séparés et partagent un support H
 
 ### Droits par profil (§5.6)
 
-Les droits des fonctionnalités futures sont la répartition retenue pour la suite ; F1 à F4 sont implémentées aujourd'hui.
+Les droits des fonctionnalités futures sont la répartition retenue pour la suite ; F1 à F6 sont implémentées aujourd'hui.
 
 | N° | Fonctionnalité | AGENT | RESPONSABLE_EXPLOITATION |
 |---|---|---|---|
 | F2–F3 | Consulter équipements et fiches | Lecture seule | Lecture seule |
 | F4 | Déclarer un incident | Accès complet | Accès complet |
-| F5–F6 | Consulter / modifier un incident | Lecture seule | Accès complet |
+| F5–F6 | Consulter / modifier un incident | Lecture F5, modification F6 interdite | Lecture F5, modification de la description des incidents actifs F6 |
 | F7 | Affecter ou réaffecter un prestataire | Interdit | Accès complet |
 | F8 | Déclarer un incident résolu | Interdit | Accès complet |
 | F9 | Consulter l'historique | Lecture seule | Lecture seule |
@@ -110,7 +110,7 @@ Les droits des fonctionnalités futures sont la répartition retenue pour la sui
 | F11 | Tableau de bord | Interdit | Lecture seule |
 
 Le responsable pilote les affectations, la résolution et l'évaluation ; l'agent signale les pannes et consulte le suivi.
-F6 sera limitée à la description d'un incident encore actif ; les transitions d'état auront leurs opérations dédiées (F7/F8).
+F6 est limitée à la description d'un incident encore actif pour corriger les informations de diagnostic sans altérer la traçabilité des dates, de l'équipement ni de l'affectation. Les incidents résolus restent immuables afin de préserver l'historique. Les transitions d'état auront leurs opérations dédiées (F7/F8).
 `SecurityConfig` exige l'un des deux rôles pour les GET `/stations` et `/stations/**` (RG11). Aucun endpoint d'écriture du catalogue n'est exposé par F2.
 
 ### Exceptions, requêtes et transactions F2
@@ -220,6 +220,8 @@ Depuis la préparation Supabase, H2 utilise le mode PostgreSQL. Des variables `T
 | `EquipementIntegrationTests` | Connexion obligatoire, deux profils autorisés, navigation depuis l'accueil, isolation entre stations, tri, types et états, absence de modification lors des lectures, catalogue/station vides, 404/400, échappement HTML et référence unique interstations (RG9). |
 | `FicheEquipementIntegrationTests` / `IncidentTest` | Fiche et incidents de l'équipement, tri RG7, droits, absence de ressource, listes vides, HTML échappé et invariants du modèle incident. |
 | `DeclarationIncidentIntegrationTests` | Déclaration par les deux profils, horloge fixe, validation et limite de longueur, saisie conservée, données client falsifiées, erreurs 400/404, connexion, CSRF et absence de réécriture au rafraîchissement après redirection. |
+| `DetailIncidentIntegrationTests` / `EvaluationTest` | Détail pour les deux profils, durée courante ou arrêtée à la résolution, prestataire, évaluation et commentaire facultatifs, RG8, unicité, HTML échappé, connexion et erreurs 400/404. |
+| `ModificationIncidentIntegrationTests` | Correction par le responsable, agent en lecture seule, interdictions HTTP et service, incidents résolus et formulaire devenu obsolète après résolution, champs falsifiés, validation et limite, données conservées, 400/404/409, CSRF et HTML échappé. |
 | `DonneesDemonstrationIntegrationTests` | Initialisation effective avec le profil `demo`, diversité des données, station vide, absence de doublons au relancement et absence de création de comptes. |
 
 Vérification F2 du **27/10/2026** : `./mvnw.cmd -B verify` réussie, **28 tests, 0 échec, 0 erreur**, JAR et rapport JaCoCo générés. Compilation ciblant Java 21, exécution sur le JDK 25.0.3 installé sur cette machine. Les huit nouveaux tests tournent sur H2 en mode PostgreSQL ; les bases réelles ne sont pas modifiées par cette vérification. Le rendu visuel et l'exécution de F2 sur MySQL/Supabase restent à contrôler sur l'environnement de démonstration.
@@ -276,7 +278,7 @@ L'accessibilité complète, les différences H2/MySQL, la charge et la compatibi
 
 ## BILAN
 
-- État au 27/10/2026 : F1 à F4 réalisées ; le CRUD de programmeurs reste un support issu du TP. F5 à F12 restent à développer sur des branches dédiées.
+- État au 27/10/2026 : F1 à F6 réalisées ; le CRUD de programmeurs reste un support issu du TP. F7 à F12 restent à développer sur des branches dédiées.
 - Point de conception F2 : distinguer une station absente (404) d'une station existante sans équipement (200), et effectuer le filtrage en base pour éviter de mélanger les stations.
 - Trois points à retenir : séparer HTTP/métier/persistance ; garantir les invariants en base et les droits côté serveur ; tester les comportements attendus avec de vraies requêtes HTTP et une base isolée.
 - Avant rendu : compléter la contribution de chaque membre et la difficulté principale du groupe, le second choix alpha, l'unique requête native et son analyse, les comptes de test et l'URL déployée. La migration des anciens mots de passe en clair de F1 reste une compatibilité historique ; les comptes de démonstration finaux doivent déjà être hachés.
@@ -309,7 +311,7 @@ L'accessibilité complète, les différences H2/MySQL, la charge et la compatibi
 
 - Branche `feature/f4-declaration-incident`, basée sur F3. F3 est intégrée en premier (PR #5) ; la PR F4 vise ensuite `master` pour présenter uniquement la déclaration.
 - Parcours : fiche équipement → formulaire GET `/equipements/{id}/incidents/nouveau` → POST `/equipements/{id}/incidents` → redirection vers la fiche avec confirmation et liste actualisée.
-- `DeclarationIncident` est un objet de saisie limité à la description (non blanche, 2000 caractères maximum). Le contrôleur lie explicitement ce seul champ. Les erreurs conservent les valeurs avec des messages français ; une ressource absente reste une 404, y compris si la description est invalide.
+- `DescriptionIncident` est l'objet de saisie limité à la description (non blanche, 2000 caractères maximum), commun à F4 et F6. Le contrôleur lie explicitement ce seul champ. Les erreurs conservent les valeurs avec des messages français ; une ressource absente reste une 404, y compris si la description est invalide.
 - `IncidentService.declarer` porte la transaction d'écriture et utilise l'équipement trouvé par l'URL et l'horloge injectée. Le modèle impose l'état initial non affecté sans prestataire ni résolution (RG1/RG2). La validation du service ne peut pas être contournée par un appel direct.
 - L'identifiant de l'incident est généré par JPA ; les champs de statut/date/prestataire/équipement transmis artificiellement ne peuvent ni modifier un incident existant ni détourner la cible.
 - Les deux profils peuvent déclarer un incident. La route POST vérifie le rôle côté serveur et conserve CSRF ; l'écran GET reste protégé (RG11). Les secrets Supabase et le fichier `.env` ne sont pas impliqués dans les tests.
@@ -317,3 +319,30 @@ L'accessibilité complète, les différences H2/MySQL, la charge et la compatibi
 - Aucun changement automatique de l'état de l'équipement : un incident peut être une anomalie sans arrêt de fonctionnement. Plusieurs incidents restent autorisés, car le sujet ne prescrit pas de limite à ce stade.
 - Tests ajoutés : création par les deux profils avec horloge fixe, présence sur la fiche, statut et dates serveur, description vide/blanche/trop longue, limite exacte, conservation de la saisie, champs falsifiés, équipement absent, identifiant invalide, connexion et CSRF, échappement HTML et validation du service.
 - Vérification F4 : `./mvnw.cmd -B verify` réussie, **45 tests, aucun échec ni erreur**, JAR et rapport JaCoCo générés. Exécution locale sur JDK 25.0.3, cible Java 21 ; les tests de déclaration utilisent une horloge fixe et une base H2 dédiée, sans toucher à Supabase.
+
+## 27/10/2026 — F5 : détail d'un incident
+
+- Branche `feature/f5-detail-incident`, avec PR vers `master`. F5 respecte le §5.3 : description, équipement, station, durée d'ouverture, prestataire éventuel et évaluation éventuelle.
+- Le numéro d'incident dans la fiche équipement ouvre `/incidents/{id}`. Les deux profils sont autorisés en lecture, avec vérification du rôle côté serveur (RG11). Le bandeau utilisateur et la déconnexion restent présents.
+- `IncidentService.consulter` calcule la durée via l'horloge UTC injectée : ouverture → heure courante pour les actifs, ouverture → résolution pour les résolus. La durée n'est pas stockée en base. Une ouverture future importée est présentée avec une durée nulle plutôt que négative.
+- Le service reste indépendant des vues et le contrôleur prépare seulement le modèle HTTP (SRP). Les lectures sont regroupées dans `@Transactional(readOnly = true)` ; la requête JPQL charge l'équipement, sa station et le prestataire pour éviter des accès différés pendant le rendu.
+- `IncidentIntrouvableException` et le `ControllerAdvice` existant produisent une page 404 en français ; les identifiants invalides produisent 400. Les textes sont échappés par Thymeleaf et les champs facultatifs ont des états vides lisibles.
+- Le modèle `Evaluation` permet la lecture de l'évaluation demandée par F5. Il impose un incident résolu avec prestataire, une note entre 1 et 5 et une date au moins égale à la résolution ; une contrainte unique en base garantit une évaluation par incident (RG8). Le repository utilise une requête dérivée `findByIncidentId`. La saisie F10 reste hors périmètre.
+- Le profil demo ajoute une évaluation à l'incident résolu sur un catalogue neuf, dans sa transaction existante. Les catalogues déjà renseignés ne sont pas remplacés.
+- Vérification : `./mvnw.cmd -B verify`, **54 tests réussis**, aucun échec ni erreur, JAR et rapport JaCoCo générés. Horloge fixe et H2 dédiée pour les nouveaux tests ; JDK local 25.0.3, cible Java 21. Les vérifications de la PR sont exécutées sous Java 21 ; le rendu navigateur et la base distante restent à contrôler dans l'environnement de démonstration.
+- Secrets : `.env` / `.env.*` sont ignorés par Git (tous dossiers), `.env.example` reste réservé à des exemples sans secret. Vérification `git check-ignore` réussie et aucun `.env` suivi par Git ; aucun secret n'a été ajouté à la branche.
+
+## 27/10/2026 — F6 : modification autorisée d'un incident
+
+- Branche `feature/f6-modification-incident`, basée sur F5, avec PR vers la branche F5 pour séparer la revue. Les deux PR restent ouvertes à la demande du groupe ; F5 est à intégrer avant de recibler F6 sur `master`.
+- Choix du groupe pour F6 (§5.3/§5.6) : seul le RESPONSABLE_EXPLOITATION corrige la description des incidents encore actifs (non affectés ou affectés). L'AGENT consulte ; les incidents résolus ne sont plus modifiables. La justification est la conservation de l'historique et des données de prise en charge.
+- Les routes GET `/incidents/{id}/modifier` et POST `/incidents/{id}` contrôlent le rôle. `@EnableMethodSecurity` et `@PreAuthorize` sur `IncidentService.preparerModification` / `modifierDescription` protègent aussi les appels directs au service (RG11). `DroitsIncident` prépare la capacité d'affichage du bouton ; masquer ce bouton n'est pas la protection de sécurité.
+- `Incident.isModifiable` / `verifierModifiable` portent la règle d'état dans le modèle, et `modifierDescription` ne change que ce champ. Une opération sur un incident résolu renvoie une exception personnalisée traduite en 409. Aucun contrôleur ni template ne réalise la transition ni ne décide de la règle d'état.
+- L'ancienne saisie `DeclarationIncident` devient `DescriptionIncident`, partagée par F4/F6 avec les mêmes contraintes Jakarta Validation. Un fragment Thymeleaf commun évite de dupliquer les champs et les messages. Les contrôleurs ont une liste explicite de champs autorisés ; les identifiants et propriétés supplémentaires sont ignorés.
+- `IncidentService.modifierDescription` utilise une transaction d'écriture et une requête JPQL munie de `PESSIMISTIC_WRITE` sur la seule ligne incident. Le verrou est pris avant de vérifier l'état courant : une résolution déjà enregistrée interdit la correction, et une résolution concurrente attend la fin de cette correction. Le dirty checking persiste la correction sans recopier les champs envoyés par le client (RG10).
+- Les corrections concurrentes de description sont sérialisées : la dernière correction valide est conservée. Il n'y a pas de version de formulaire ni de fusion automatique de deux textes.
+- Les paramètres invalides, ressources absentes et états interdits gardent 400, 404 et 409. Les saisies refusées conservent les valeurs du formulaire et ne changent pas la base. Les POST conservent CSRF ; une réussite utilise Post/Redirect/Get et un message de confirmation.
+- SRP est conservé : contrôleurs pour le parcours HTTP, service pour l'orchestration/transaction, modèle pour la règle d'état, repositories pour l'accès aux données. Le service dépend des interfaces JPA injectées (DIP). Aucune hiérarchie supplémentaire ni requête native artificielle n'est introduite ; l'unique SQL natif attendu pour le projet complet reste à réaliser dans une fonctionnalité adaptée.
+- Référence pour la sécurité des méthodes : [documentation officielle Spring Security](https://docs.spring.io/spring-security/reference/7.0/servlet/authorization/method-security.html).
+- Vérifications manuelles prévues : se connecter comme agent (lecture et URL d'édition refusée), puis comme responsable (correction d'un actif, erreurs de saisie, annulation), tenter la modification d'un résolu et vérifier la conservation des dates/statut/affectation. Le rendu visuel et l'exécution sur Supabase ne sont pas certifiés par les tests H2.
+- Vérification automatisée : `./mvnw.cmd -B verify`, **63 tests réussis**, aucun échec ni erreur, JAR et rapport JaCoCo générés (JDK local 25.0.3, cible Java 21). Les tests F4 continuent à passer après mutualisation du formulaire ; les neuf tests F6 couvrent les droits HTTP et service, les saisies invalides, les champs falsifiés, l'incident résolu après ouverture du formulaire et les refus sans mutation. Aucun secret de production ni accès à Supabase n'est nécessaire.

@@ -39,7 +39,8 @@
                     <th scope="col">Statut</th><th scope="col">Prestataire</th><th scope="col">Résolution (UTC)</th></tr></thead>
                 <tbody>
                 <tr th:each="incident : ${incidents}">
-                    <th scope="row" th:text="|#${incident.id}|"></th>
+                    <th scope="row"><a th:href="@{/incidents/{id}(id=${incident.id})}" th:text="|#${incident.id}|"
+                                       th:attr="aria-label=|Consulter le détail de l'incident ${incident.id}|"></a></th>
                     <td class="incident-description" th:text="${incident.description}"></td>
                     <td class="text-nowrap" th:text="${#temporals.format(incident.dateOuverture, 'dd/MM/yyyy HH:mm')}"></td>
                     <td><span class="incident-status" th:attr="data-statut=${incident.statut}" th:text="${incident.statut.libelle}"></span></td>
