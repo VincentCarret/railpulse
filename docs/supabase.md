@@ -1,96 +1,34 @@
-# Connexion JPA à Supabase
+# PostgreSQL / Supabase
 
-L'application utilise PostgreSQL via JDBC et Spring Data JPA. Elle ne passe pas par l'API REST Supabase : une clé `sb_secret_*` n'est donc pas utilisée pour cette connexion.
+Rail Pulse utilise JDBC et JPA avec PostgreSQL, sans appeler la Data API Supabase. Il ne requiert aucune cl? `sb_secret_*` ou cl? publique de cette API.
 
-## Paramètres
+## Connexion
 
-Le profil `supabase` est utilisé par défaut. La configuration IntelliJ MySQL reste disponible pour le développement local. Les mêmes variables peuvent être renseignées localement, dans IntelliJ ou avec les secrets du futur déploiement CI/CD.
+Dans **Connect ? Session pooler**, relever l'h?te, le port, le nom de base et l'utilisateur. La connexion directe utilise g?n?ralement IPv6 ; le Session pooler permet une connexion IPv4. Ne pas deviner l'h?te du pooler ? partir de la r?gion.
 
-| Variable | Valeur |
-|---|---|
-| `SPRING_PROFILES_ACTIVE` | `supabase` pour activer la configuration distante, notamment dans le CI/CD. |
-| `SPRING_DATASOURCE_PASSWORD` | Mot de passe de la base PostgreSQL, obligatoire pour une connexion réelle. |
-| `SPRING_DATASOURCE_URL` | URL JDBC avec SSL. Par défaut : `jdbc:postgresql://db.aehaxzwjhtkhqttvvqrd.supabase.co:5432/postgres?sslmode=require&connectTimeout=10&socketTimeout=30`. |
-| `SPRING_DATASOURCE_USERNAME` | `postgres` en connexion directe ; reprendre la valeur exacte du tableau de bord pour le pooler. |
+Variables, fournies dans l'environnement ou le gestionnaire de secrets de Render :
 
-Le pool Hikari est limité à 5 connexions et garde au minimum une connexion disponible.
-Le dialecte SQL est déduit du pilote PostgreSQL. Aucun mot de passe n'est inclus dans l'URL ou les fichiers versionnés.
-
-### Connexion directe ou Session pooler
-
-Ouvrir le projet Supabase, puis **Connect**. La connexion directe nécessite normalement IPv6, sauf option IPv4 du projet.
-Si le réseau ou le DNS ne permet pas la connexion directe, sélectionner **Session pooler** et reprendre son hôte et son utilisateur exacts.
-Le nom d'hôte du pooler ne doit pas être deviné à partir de la région.
-Le mode transaction n'est pas retenu ici : l'application Spring est un serveur persistant et utilise des transactions JPA et des requêtes préparées.
-
-Transformer l'URI affichée en URL JDBC, sans y mettre les identifiants :
-
-```text
-jdbc:postgresql://HOTE_REPRIS_DEPUIS_CONNECT:5432/postgres?sslmode=require&connectTimeout=10&socketTimeout=30
+```dotenv
+SPRING_PROFILES_ACTIVE=supabase,render
+SPRING_DATASOURCE_URL=jdbc:postgresql://HOTE_SESSION_POOLER:5432/postgres?sslmode=require&connectTimeout=10&socketTimeout=30
+SPRING_DATASOURCE_USERNAME=UTILISATEUR_SESSION_POOLER
+SPRING_DATASOURCE_PASSWORD=
 ```
 
-L'hôte direct fourni n'était pas résolu depuis le PC lors de la préparation du 14/10/2026. La connexion au projet distant reste à confirmer après renseignement des identifiants et d'un point d'accès joignable.
+Remplir le mot de passe PostgreSQL, s?par?ment de l'URL JDBC. Le `.env` local n'est pas charg? automatiquement par Spring : Render peut l'importer, et un terminal/IDE peut d?finir les variables explicitement. Le script de d?monstration autonome n'importe pas les param?tres de base distante.
 
-Référence : [documentation officielle des connexions Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres).
+Le profil `supabase` reste le profil par d?faut historique ; les variables standard remplacent ses param?tres. Pour une d?monstration sans ce service, utiliser le script H2 d?crit dans le README.
 
-## Développement local
+## Sch?ma et comptes
 
-Les paramètres sont désormais en dur dans `src/main/resources/application-supabase.properties` : URL JDBC du Session pooler et utilisateur `postgres.aehaxzwjhtkhqttvvqrd`. Le mot de passe reste local et ne doit jamais être commité.
-Le fichier `config/supabase-local.properties` n'est plus importé automatiquement. Les variables standard `SPRING_DATASOURCE_*` permettent de remplacer les valeurs en dur dans le futur CI/CD.
+`db/supabase-schema.sql` cr?e le sch?ma `railpulse` ; Hibernate initialise les tables et contraintes. Le compte PostgreSQL doit disposer des droits correspondants. Les utilisateurs applicatifs sont dans `railpulse.users` ; il ne s'agit pas de Supabase Auth.
 
-Dans IntelliJ, lancer le projet avec son dossier racine comme répertoire de travail. Les variables peuvent aussi être renseignées dans **Run > Edit Configurations > Environment variables**.
-Recharger Maven pour récupérer le pilote PostgreSQL.
+Au d?marrage, les anciennes valeurs de mot de passe sont migr?es en BCrypt transactionnellement. Les nouvelles ?critures imposent BCrypt. Le profil `demo`, avec ses deux variables de secret, cr?e `demo.agent` et `demo.responsable` sans remplacer les comptes existants. Voir [Render](render.md) pour la liste compl?te des variables.
 
-Deux configurations de lancement IntelliJ sont partagées dans le projet :
+Le sch?ma `railpulse` n'a pas ? ?tre expos? par la Data API pour les usages JDBC. Les donn?es MySQL ne sont pas automatiquement transf?r?es. La g?n?ration JPA `ddl-auto=update` est adapt?e au projet p?dagogique ; des migrations de sch?ma versionn?es sont ? privil?gier pour une exploitation durable.
 
-- **Rail Pulse - MySQL local** : démarre avec la base locale pour continuer à travailler avant la configuration des secrets distants.
-- **Rail Pulse - Supabase** : utilise les paramètres Supabase et nécessite un hôte accessible ainsi que le mot de passe PostgreSQL.
+## Tests isol?s
 
-`UnknownHostException` signifie que le nom de serveur n'est pas résolu. Reprendre l'URL exacte depuis **Connect > Session pooler**.
+La CI PostgreSQL utilise une base temporaire d?di?e et les variables `TEST_DB_*`, dans quatre sch?mas s?par?s. Les tests emploient `create-drop` : ne jamais fournir la base Supabase ou une base contenant des donn?es ? conserver dans `TEST_DB_URL`.
 
-Pour fournir un mot de passe ponctuel dans PowerShell sans le saisir dans une commande enregistrée dans l'historique :
-
-```powershell
-$supabasePassword = Read-Host 'Mot de passe PostgreSQL Supabase' -AsSecureString
-$env:SPRING_DATASOURCE_PASSWORD = [System.Net.NetworkCredential]::new('', $supabasePassword).Password
-.\mvnw.cmd spring-boot:run
-```
-
-Au déploiement, activer le profil `supabase` et injecter les variables de connexion depuis le gestionnaire de secrets du CI/CD. Aucun pipeline n'est créé par cette configuration.
-
-## Schéma et comptes de l'application
-
-Le script `db/supabase-schema.sql` crée le schéma `railpulse` si nécessaire. Hibernate met à jour ses tables dans ce schéma.
-Les entités utilisent les identifiants identity et les types PostgreSQL déduits par Hibernate.
-Le compte PostgreSQL doit disposer des droits de création du schéma et des tables lors de l'initialisation.
-
-Les comptes de connexion de Rail Pulse restent dans `railpulse.users`, avec le mécanisme Spring Security existant. Cela n'active pas le produit Supabase Auth.
-Le schéma `railpulse` n'est pas à ajouter aux schémas exposés par la Data API pour cette application JDBC.
-Les données existantes de MySQL ne sont pas transférées automatiquement. Une base vide nécessite de créer ou migrer des comptes applicatifs avant de pouvoir s'y connecter.
-Pour une mise en production durable, remplacer le mode de développement `ddl-auto=update` par des migrations de schéma versionnées.
-
-Dans l'onglet Database d'IntelliJ, utiliser PostgreSQL, l'URL JDBC, l'utilisateur PostgreSQL et le mot de passe de la base, puis sélectionner le schéma `railpulse` après initialisation.
-
-## Vérifications reproductibles
-
-```powershell
-.\mvnw.cmd verify
-```
-
-Les tests utilisent par défaut H2 en mémoire, en mode PostgreSQL.
-Le 14/10/2026, les 20 tests ont réussi sur H2 et sur une instance PostgreSQL 18 temporaire liée uniquement à `127.0.0.1:55432`, en utilisant le schéma `railpulse`. Le serveur de test a ensuite été arrêté.
-Pour les exécuter sur une **base PostgreSQL temporaire dédiée aux tests**, définir :
-
-```powershell
-$env:TEST_DB_URL = 'jdbc:postgresql://127.0.0.1:55432/postgres'
-$env:TEST_DB_DRIVER = 'org.postgresql.Driver'
-$env:TEST_DB_USERNAME = 'railpulse_test'
-$env:TEST_DB_SCHEMA = 'railpulse'
-$env:TEST_DB_INIT = 'always'
-.\mvnw.cmd verify
-```
-
-`TEST_DB_PASSWORD` peut être défini si le serveur temporaire en demande un.
-Les tests utilisent `create-drop` : ne jamais renseigner la base Supabase ou une base contenant des données à conserver dans `TEST_DB_URL`.
-
-Une clé secrète d'API déjà partagée doit être révoquée dans Supabase. Elle n'est ni nécessaire à JDBC, ni conservée dans ce dépôt.
+R?f?rence : [connexions PostgreSQL Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres).

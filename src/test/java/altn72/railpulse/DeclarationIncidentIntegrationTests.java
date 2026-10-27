@@ -27,7 +27,10 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Import(DeclarationIncidentIntegrationTests.HorlogeTest.class)
-@TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:f4-tests;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
+@TestPropertySource(properties = {
+        "spring.datasource.url=${TEST_DB_URL:jdbc:h2:mem:f4-tests;MODE=PostgreSQL;DB_CLOSE_DELAY=-1}",
+        "spring.jpa.properties.hibernate.default_schema=${TEST_DB_SCHEMA_F4:public}"
+})
 class DeclarationIncidentIntegrationTests extends CatalogueIntegrationTestSupport {
     private static final Instant INSTANT_DECLARATION = Instant.parse("2026-10-27T12:00:00Z");
 

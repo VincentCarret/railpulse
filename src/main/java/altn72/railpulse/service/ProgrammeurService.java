@@ -23,7 +23,7 @@ public class ProgrammeurService {
     }
 
     public List<Programmeur> getProgrammeurs() {
-        return programmeurRepository.findAll();
+        return programmeurRepository.findAllByOrderByNomAscPrenomAscIdAsc();
     }
 
     public Programmeur getUnProgrammeur(Integer id) {

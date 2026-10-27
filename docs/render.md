@@ -1,50 +1,45 @@
-# Déployer Rail Pulse sur Render
+# D?ployer Rail Pulse sur Render
 
-Le `Dockerfile` compile et teste le projet avec Java 21, puis ne conserve que le JAR et un JRE Java 21 dans l'image finale. Aucune installation locale de Docker n'est nécessaire pour le déploiement depuis GitHub.
+## Service
 
-## Nouveau Web Service
+- Type : **Web Service** ; d?p?t `VincentCarret/railpulse`.
+- Language : **Docker** ; branche : `master` apr?s revue et int?gration de la PR.
+- Root Directory : vide ; Dockerfile Path : `./Dockerfile` ; Docker Command : vide.
+- Choisir une r?gion proche de Supabase et le forfait souhait? (Free possible pour la d?monstration).
+- Health Check Path : `/login` ; **Auto-Deploy ? After CI Checks Pass** pour attendre les deux jobs Java 21.
 
-| Champ Render | Valeur |
+Le Dockerfile compile et teste, puis ex?cute le JAR avec Java 21 et un utilisateur sans privil?ges. Render fournit `PORT` ; le profil `render` configure le port, les en-t?tes du proxy HTTPS et un cookie de session s?curis?.
+
+## Variables ? importer avant le d?ploiement des correctifs
+
+Importer le `.env` local via **Environment ? Add from .env**, ou renseigner :
+
+| Cl? | Valeur |
 |---|---|
-| Name | `railpulse` (ou un nom disponible) |
-| Language | **Docker** |
-| Branch | `feature/deploiement-render`, qui contient aussi F2 ; après intégration, utiliser `master` |
-| Region | Choisir la région la plus proche de votre base Supabase ; Frankfurt est un choix européen possible |
-| Root Directory | Laisser vide |
-| Dockerfile Path | `./Dockerfile` |
-| Docker Command | Laisser vide : le démarrage est défini dans le Dockerfile |
-| Compute | **Free** pour la démonstration, si souhaité |
-| Health Check Path (Advanced) | `/login` |
-
-Avec Language = Docker, les commandes Node `yarn` et `yarn start` sont remplacées par le build et le démarrage du Dockerfile.
-
-## Variables d'environnement
-
-Configurer ces valeurs dans Render, sans placer le mot de passe dans Git ni dans l'URL JDBC :
-
-| Clé | Valeur |
-|---|---|
-| `SPRING_PROFILES_ACTIVE` | `supabase,render,demo` pour initialiser le catalogue F2 vide ; `supabase,render` ensuite |
+| `SPRING_PROFILES_ACTIVE` | `supabase,render,demo` pour la d?monstration ; `supabase,render` sans initialisation demo |
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://HOTE_SESSION_POOLER:5432/postgres?sslmode=require&connectTimeout=10&socketTimeout=30` |
-| `SPRING_DATASOURCE_USERNAME` | L'utilisateur exact affiché par Supabase dans **Connect → Session pooler** |
-| `SPRING_DATASOURCE_PASSWORD` | Le mot de passe PostgreSQL de la base Supabase |
+| `SPRING_DATASOURCE_USERNAME` | Utilisateur exact de **Supabase ? Connect ? Session pooler** |
+| `SPRING_DATASOURCE_PASSWORD` | Mot de passe PostgreSQL Supabase |
+| `RAILPULSE_DEMO_AGENT_PASSWORD` | Secret local d'au moins 12 caract?res pour `demo.agent` |
+| `RAILPULSE_DEMO_RESPONSABLE_PASSWORD` | Secret local d'au moins 12 caract?res pour `demo.responsable` |
 
-Remplacer `HOTE_SESSION_POOLER` par l'hôte exact de **Connect → Session pooler**. Reprendre aussi le port et le nom de base affichés si différents de l'exemple. Ne pas utiliser une clé API Supabase comme mot de passe PostgreSQL.
+Reprendre h?te, port et base exacts de Supabase. Une cl? API Supabase ne remplace pas le mot de passe PostgreSQL.
+Les secrets ne doivent ?tre plac?s ni dans Git ni dans le Dockerfile. `.env.example` ne contient qu'un mod?le vide.
 
-Render fournit `PORT` automatiquement. Le profil `render` le transmet à Spring Boot, traite les en-têtes HTTPS du proxy, impose un cookie de session sécurisé et désactive les requêtes SQL dans les logs.
-Le Dockerfile limite le tas Java à 60 % de la mémoire disponible pour laisser de la place aux autres besoins de la JVM ; l'utilisation réelle de la mémoire est à contrôler dans les métriques Render.
+**Les deux secrets demo doivent ?tre d?finis avant d'activer le profil `demo`.** Les comptes absents sont cr??s en BCrypt ; les comptes existants ne sont pas ?cras?s. Changer une variable ne r?initialise pas un compte d?j? cr??. Le catalogue n'est rempli que s'il est vide.
 
-Le profil `demo` ne crée pas d'utilisateur. Utiliser les comptes F1 déjà présents dans `railpulse.users`, dont les mots de passe doivent être hachés. Le catalogue n'est initialisé que si stations et équipements sont tous deux vides.
+La migration de s?curit? convertit les anciennes valeurs en clair et `{noop}` en BCrypt dans une transaction au d?marrage. Elle conserve les identifiants et les mots de passe utilisables. Un format inconnu ou vide arr?te le d?marrage et demande une r?initialisation ; la connexion elle-m?me n'accepte plus le clair.
 
-## Vérification après déploiement
+## Contr?le apr?s mise en ligne
 
-1. Vérifier dans les logs la réussite du build et du démarrage de Spring Boot.
-2. Ouvrir `https://NOM_DU_SERVICE.onrender.com/login`.
-3. Se connecter avec chacun des profils existants.
-4. Ouvrir `/stations`, consulter les équipements et vérifier le changement de station.
-5. Se déconnecter et vérifier le retour au formulaire de connexion.
-6. Reporter l'URL réelle et les résultats de démonstration dans `journal.md`.
+1. V?rifier le dernier commit d?ploy? et les logs de d?marrage, sans recopier de secrets.
+2. Ouvrir https://railpulse-23pc.onrender.com/login.
+3. Tester `demo.agent` et `demo.responsable` avec leurs secrets fournis dans Render.
+4. V?rifier station, ?quipement, d?claration, d?tail, modification responsable et refus agent.
+5. T?l?charger le CSV ; se d?connecter puis tenter une page priv?e.
 
-Le forfait Free met le service en veille après 15 minutes sans requête ; le premier chargement après veille peut prendre environ une minute. La base Supabase reste externe au conteneur.
+Le forfait Free se met en veille apr?s 15 minutes sans requ?te ; le r?veil peut prendre environ une minute. Supabase conserve les donn?es hors du conteneur.
 
-Références : [Docker sur Render](https://render.com/docs/docker), [ports des Web Services](https://render.com/docs/web-services#port-binding), [limites du forfait Free](https://render.com/docs/free).
+La CI v?rifie H2 et PostgreSQL temporaires, sans manipuler la base distante. Le d?ploiement de cette PR et ses contr?les authentifi?s sur Render restent une ?tape distincte.
+
+R?f?rences : [Docker](https://render.com/docs/docker), [d?ploiement apr?s CI](https://render.com/docs/deploys#automatic-deploys), [offre Free](https://render.com/docs/free).

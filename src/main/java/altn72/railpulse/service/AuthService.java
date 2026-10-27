@@ -3,6 +3,7 @@ package altn72.railpulse.service;
 
 import altn72.railpulse.modele.User;
 import altn72.railpulse.modele.UserRepository;
+import altn72.railpulse.modele.FormatMotDePasse;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -12,8 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class
-AuthService implements UserDetailsService, UserDetailsPasswordService {
+public class AuthService implements UserDetailsService, UserDetailsPasswordService {
 
     private final UserRepository userRepository;
 
@@ -34,17 +34,12 @@ AuthService implements UserDetailsService, UserDetailsPasswordService {
     }
 
     private UserDetails toUserDetails(User user) {
-        String password = user.getPassword();
-        // Existing SQL accounts may contain plain text or BCrypt without its Spring prefix.
-        // DaoAuthenticationProvider upgrades them after a successful password check.
-        if (password.startsWith("$2")) {
-            password = "{bcrypt}" + password;
-        } else if (!password.startsWith("{")) {
-            password = "{noop}" + password;
+        if (!FormatMotDePasse.estBcrypt(user.getPassword())) {
+            throw new UsernameNotFoundException("Ce compte nécessite une migration ou une réinitialisation du mot de passe.");
         }
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getLogin())
-                .password(password)
+                .password(FormatMotDePasse.normaliser(user.getPassword()))
                 .roles(user.getProfil().name())
                 .build();
     }

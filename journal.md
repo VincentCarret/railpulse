@@ -1,348 +1,170 @@
-# Journal de développement — Rail Pulse
+# Journal ? Rail Pulse (ALTN72, 2026-2027)
 
-## README — Périmètre et règles retenues
+**Groupe : Amir Nassiri et Vincent Carret.** ?tat au 27 octobre 2026, p?rim?tre F1 ? F6.
 
-Ce journal décrit le code effectivement réalisé, ses vérifications et ses limites.
-Le projet utilise Java 21, Spring Boot, Spring MVC, Thymeleaf, Spring Data JPA et PostgreSQL/Supabase. Le profil MySQL local reste disponible pour compatibilité.
-Les explications du corrigé initial sont conservées dans [les notes du TP 5](docs/journal-tp5.md).
+## README
 
-Le sujet de référence est **ALTN72 — Projet final 2026-27**, notamment §5.2 (F2), §5.6 (droits), RG9, RG11 et §7 (architecture, persistance, tests).
-F1 à F6 sont réalisées : connexion, équipements par station, fiche équipement, déclaration, détail et modification autorisée d'un incident.
-Le CRUD de programmeurs provient du TP et sert de support aux formulaires, transactions et tests.
-Les fonctionnalités F7 à F12 ne sont pas encore réalisées.
-Les instructions de configuration, de lancement et d'initialisation F2 sont dans le [README](README.md#f2--équipements-par-station).
-L'URL déployée, les comptes de démonstration et les noms du groupe restent à renseigner avant le rendu.
+Le [README](README.md) contient les pr?requis Java 21, les commandes Maven et le lancement autonome sur H2 avec `scripts/demarrer-demo.ps1`. Une base neuve initialise le catalogue et les deux profils ; une base existante est conserv?e.
 
-| Règle | Mise en œuvre et justification |
-|---|---|
-| Login existant et mot de passe valide | Spring Security vérifie le compte de la table `users`. |
-| Erreur d'identification | Retour au même formulaire, message générique ne révélant pas si le compte existe. |
-| Utilisateur connecté | Prénom, profil et formulaire de déconnexion dans le bandeau commun. |
-| Déconnexion | POST protégé par CSRF, invalidation de la session, suppression du cookie, retour à `/login`. |
-| Profils | `AGENT` et `RESPONSABLE_EXPLOITATION`. F2 autorisée en lecture pour les deux, avec contrôle des rôles côté serveur. |
-| Catalogue F2 | Choisir une station et retrouver uniquement ses équipements avec référence, libellé, type et état. |
-| RG9 | Contrainte unique en base sur la référence d'équipement, commune à toutes les stations. |
-| Station absente / vide | Page 404 avec message français / page 200 avec état vide explicite. |
-| Nom et prénom des programmeurs | Obligatoires, non blancs, 100 caractères maximum, en cohérence avec les colonnes existantes. |
-| Autres champs textuels | Facultatifs ; adresse limitée à 255 caractères, langage à 100, livre à 150, conformément au schéma. |
-| Salaire | Facultatif, fini et positif ou nul. Le refus des valeurs négatives est une hypothèse explicite du projet, à confirmer si le sujet évolue. Aucune devise ou périodicité n'est supposée. |
-| Création | Génère un nouvel identifiant ; un identifiant envoyé par le client ne peut pas écraser une ligne. |
-| Modification | Conserve l'identifiant de l'URL et n'autorise que les champs du formulaire. |
-| Ressource inexistante | Réponse 404 pour la lecture, la modification et la suppression. Une modification ne crée pas une ligne manquante. |
-| Saisie invalide | Le formulaire conserve les valeurs saisies et affiche les erreurs ; la base reste inchangée. |
-| Liste vide | État vide explicite et lien pour créer le premier programmeur. |
+- Application : https://railpulse-23pc.onrender.com ; formulaire de connexion v?rifi? HTTP 200 lors de l'audit. La pr?sence en ligne ne prouve pas ? elle seule la version du code ni tous les parcours authentifi?s.
+- Comptes : `demo.agent` / `RAILPULSE_DEMO_AGENT_PASSWORD` et `demo.responsable` / `RAILPULSE_DEMO_RESPONSABLE_PASSWORD`. L'?valuateur d?finit ses propres mots de passe au lancement ; ils sont hach?s avant insertion et ne sont pas versionn?s.
+- Base locale : H2 relationnelle dans `.data/`, ignor?e par Git. PostgreSQL/Supabase pour Render, MySQL disponible en profil explicite. Le script local force H2 pour prot?ger les bases distantes d'une configuration h?rit?e.
+- Initialisation : JPA pour le sch?ma, `ComptesDemonstrationAuDemarrage` et `DonneesDemonstration` pour les donn?es. Migration BCrypt pr?alable. Les initialisations sont transactionnelles et idempotentes ; aucun ?crasement de compte/catalogue existant.
+- Limites : F7 ? F12 restent ? r?aliser. Pas d'interface de saisie d'?valuation F10, pas encore d'indicateur d'urgence F11 ni d'API REST F12. `ddl-auto=update` est un choix p?dagogique, pas une strat?gie de migration de sch?ma de production.
 
 ## ARCHITECTURE
 
-### Vue d'ensemble
-
-Rail Pulse suit une architecture en couches de type MVC enrichie par une couche de service et une couche de persistance. Une requête traverse les composants dans cet ordre : navigateur, contrôleur Spring MVC, service métier, repository Spring Data JPA, base de données. La réponse revient ensuite vers le contrôleur, qui fournit un modèle à Thymeleaf pour produire la page HTML.
+D?p?t : https://github.com/VincentCarret/railpulse
 
 ```text
-Navigateur
-    │ HTTP / formulaire / session
-    ▼
-Contrôleurs MVC ──► Services applicatifs ──► Repositories JPA ──► PostgreSQL Supabase
-    │                      │                       │
-    └──────────────► Modèles Thymeleaf       Entités JPA
+Navigateur ?? HTTP/session/CSRF ??? Contr?leurs MVC ??? Services ??? Repositories JPA
+                                         ?               ?              ?
+                                         ?               ?              ?
+                                 Vues Thymeleaf      Mod?le m?tier   Base relationnelle
+                                 et fragments       et contraintes  PostgreSQL / H2
 ```
 
-Le contrôleur ne contient ni requête SQL ni règle de validation métier complexe. Le service orchestre l'opération et définit la transaction. Le repository fournit l'accès aux données. Cette séparation permet de tester chaque responsabilité et de changer le moteur de base sans réécrire les écrans.
-
-### Responsabilités des couches
-
-- Présentation : `EquipementControleur` expose `/stations` et `/stations/{stationId}/equipements` ; `ProgrammeurControleur` conserve le CRUD du TP. Les templates Thymeleaf affichent les données ; les fragments partagent le bandeau et les champs communs.
-- Sécurité : `SecurityConfig` protège les routes privées, gère `/login`, la déconnexion POST et CSRF. `AuthService` adapte les utilisateurs au contrat Spring Security et compare les mots de passe BCrypt.
-- Application : `EquipementService` vérifie l'existence d'une station et fournit ses équipements ; `ProgrammeurService` conserve les opérations du TP.
-- Domaine : `Station`, `Equipement`, `TypeEquipement` et `EtatFonctionnement` décrivent le catalogue ; `Programmeur`, `User` et `Profil` restent disponibles.
-- Persistance : `StationRepository` et `EquipementRepository` complètent les repositories existants. Le profil `supabase` utilise PostgreSQL dans le schéma `railpulse`, tandis que `mysql` conserve la base locale.
-
-Dépôt : https://github.com/VincentCarret/railpulse
-
-Flux F2 : navigateur → `EquipementControleur` → `EquipementService` → repositories → tables `station` / `equipement`, puis rendu `equipements.html`. La relation équipement/station est obligatoire et chargée à la demande ; la page n'accède pas à une relation non chargée.
-
-### Flux de connexion
-
-1. Le navigateur demande `/login`, seule page publique.
-2. Spring Security délègue la recherche du compte à `AuthService`.
-3. Le mot de passe est comparé au hash BCrypt stocké dans `railpulse.users`.
-4. En cas d'échec, le formulaire est réaffiché avec un message générique.
-5. En cas de succès, la session est renouvelée et le bandeau affiche le prénom et le profil.
-6. La déconnexion invalide la session et redirige vers `/login`.
-
-### Flux CRUD
-
-Un formulaire POST passe par Jakarta Validation puis par `ProgrammeurService`. Le service enregistre l'entité dans une transaction via JPA ; le contrôleur redirige ensuite vers la liste selon le schéma Post/Redirect/Get. Les identifiants sont pris depuis l'URL et les ressources absentes renvoient 404. `GlobalExceptionHandler` transforme les erreurs attendues en pages et statuts HTTP cohérents.
-
-- Les contrôleurs traitent les requêtes HTTP et préparent les modèles de vues.
-- Les services portent les opérations applicatives et les limites transactionnelles.
-- Les interfaces de repository délèguent la persistance à Spring Data JPA.
-- Les entités utilisent les annotations Jakarta Persistence et Jakarta Validation.
-- Thymeleaf utilise les modèles, le binding des formulaires et des fragments communs.
-- `HiddenHttpMethodFilter` permet les modifications PUT et suppressions DELETE depuis des formulaires HTML.
-- Le schéma Post/Redirect/Get évite de rejouer une écriture lors du rafraîchissement après succès.
-- Le dirty checking JPA enregistre la modification de l'entité gérée dans la transaction.
-
-## Clean Code
-
-Les anciennes versions commentées des contrôleurs, services et écrans ont été retirées du code actif et conservées dans l'historique Git et les notes du TP.
-Les dépendances applicatives sont injectées par constructeur et conservées dans des champs `final`.
-Les modifications de propriétés sont explicites plutôt qu'effectuées par copie réflexive de toutes les propriétés.
-Les champs HTML sont partagés dans un fragment unique, et le bandeau utilisateur dans un autre.
-Les logs utilisent SLF4J ; les messages techniques ne sont pas montrés à l'utilisateur.
-Les tests d'authentification et de CRUD sont séparés et partagent un support HTTP de test, sans héritage métier artificiel.
-
-## CHOIX TECHNIQUES
-
-### Droits par profil (§5.6)
-
-Les droits des fonctionnalités futures sont la répartition retenue pour la suite ; F1 à F6 sont implémentées aujourd'hui.
-
-| N° | Fonctionnalité | AGENT | RESPONSABLE_EXPLOITATION |
-|---|---|---|---|
-| F2–F3 | Consulter équipements et fiches | Lecture seule | Lecture seule |
-| F4 | Déclarer un incident | Accès complet | Accès complet |
-| F5–F6 | Consulter / modifier un incident | Lecture F5, modification F6 interdite | Lecture F5, modification de la description des incidents actifs F6 |
-| F7 | Affecter ou réaffecter un prestataire | Interdit | Accès complet |
-| F8 | Déclarer un incident résolu | Interdit | Accès complet |
-| F9 | Consulter l'historique | Lecture seule | Lecture seule |
-| F10 | Évaluer un prestataire | Interdit | Accès complet |
-| F11 | Tableau de bord | Interdit | Lecture seule |
-
-Le responsable pilote les affectations, la résolution et l'évaluation ; l'agent signale les pannes et consulte le suivi.
-F6 est limitée à la description d'un incident encore actif pour corriger les informations de diagnostic sans altérer la traçabilité des dates, de l'équipement ni de l'affectation. Les incidents résolus restent immuables afin de préserver l'historique. Les transitions d'état auront leurs opérations dédiées (F7/F8).
-`SecurityConfig` exige l'un des deux rôles pour les GET `/stations` et `/stations/**` (RG11). Aucun endpoint d'écriture du catalogue n'est exposé par F2.
-
-### Exceptions, requêtes et transactions F2
-
-- `StationIntrouvableException` porte un message français et `GlobalExceptionHandler` le traduit en page 404. Le même `@ControllerAdvice` conserve l'homogénéité des erreurs du projet et masque les détails techniques. Un identifiant mal formé renvoie 400.
-- `StationRepository.findAllByOrderByNomAscIdAsc` est une requête dérivée ; `EquipementRepository.rechercherParStation` est une requête JPQL explicite. Le filtrage par station et le tri par référence sont effectués en base.
-- Aucune requête native n'est ajoutée artificiellement pour F2. L'unique requête SQL native exigée au §7.6 reste à réaliser et à analyser dans une prochaine fonctionnalité adaptée.
-- `EquipementService` utilise `@Transactional(readOnly = true)` pour regrouper les lectures de station et d'équipements dans une transaction sans écriture.
-- `DonneesDemonstration.run` utilise une transaction d'écriture : stations et équipements de démonstration sont créés ensemble ou annulés ensemble (RG10). Le profil `demo` est explicite et ignore un catalogue déjà renseigné.
-- Les enums sont persistées par leur nom, pour éviter qu'un réordonnancement change le sens des valeurs stockées. Les états de fonctionnement de F2 sont distincts des futurs indicateurs d'urgence des incidents (RG3/RG4).
-
-### SOLID : principes appliqués et limites justifiées
-
-### SRP — responsabilité unique : appliqué
-
-`ProgrammeurControleur` peut changer si le parcours HTTP évolue ; `ProgrammeurService` si les opérations applicatives évoluent ; `ProgrammeurRepository` si les besoins d'accès aux données évoluent.
-`GlobalExceptionHandler` centralise la traduction des exceptions en pages et statuts HTTP.
-Le même découpage s'applique à F2 : contrôleur HTTP, service de consultation, repositories de catalogue et initialisation de démonstration séparés.
-Les vues ne réalisent aucune requête SQL. Les services ne choisissent aucun template HTML.
-Ces responsabilités ont des raisons de changement différentes et restent séparées.
-
-### DIP — inversion des dépendances : appliqué
-
-`ProgrammeurService` dépend de l'interface `ProgrammeurRepository`, pas d'une implémentation JDBC écrite dans le service.
-Spring fournit l'implémentation au constructeur. Les contrôleurs ne construisent pas leurs propres services ou connexions SQL.
-L'authentification s'appuie également sur les contrats `UserDetailsService`, `UserDetailsPasswordService` et `PasswordEncoder` de Spring Security.
-Changer le mécanisme de hachage n'impose pas de modifier le contrôleur ou le formulaire de connexion.
-
-### OCP — ouvert/fermé : pas de mécanisme métier supplémentaire
-
-Le framework offre déjà des points d'extension (encodeurs de mots de passe, repositories, gestionnaires d'erreurs).
-Le domaine actuel ne comporte pas plusieurs stratégies de calcul ou variantes de traitement.
-Ajouter une hiérarchie de stratégies uniquement pour illustrer OCP compliquerait le code sans besoin identifié.
-Si plusieurs variantes métier apparaissent, leur point de variation pourra être extrait dans une interface.
-
-### LSP — substitution de Liskov : pas de hiérarchie métier à introduire
-
-Les entités métier ne sont pas organisées en sous-classes interchangeables.
-Créer des sous-types artificiels n'aiderait pas à satisfaire les règles actuellement connues.
-Les contrats des interfaces du framework sont respectés, notamment les valeurs de retour et exceptions de `UserDetailsService`.
-Cela ne constitue pas une preuve générale de tous les contrats LSP possibles du framework.
-
-### ISP — ségrégation des interfaces : pas de découpage supplémentaire pertinent
-
-Les dépôts sont déjà séparés par entité, et les services ne dépendent pas d'un service universel regroupant toutes les fonctionnalités.
-Spring Security sépare notamment la lecture d'un compte et la mise à jour de son mot de passe en deux interfaces.
-Ajouter des wrappers reproduisant chaque méthode de `JpaRepository` n'apporterait pas de valeur dans ce petit périmètre.
-Un découpage supplémentaire deviendrait pertinent si des consommateurs avaient des besoins nettement différents.
-
-## LOT ALPHA
-
-### Socle F1 : sécurité et contexte de session
-
-- Contrôle d'accès commun aux routes privées, indépendamment du contrôleur.
-- Connexion par formulaire, message d'échec, session HTTP et déconnexion.
-- Protection CSRF des formulaires d'écriture et de déconnexion.
-- Rotation de l'identifiant de session après connexion et invalidation après déconnexion.
-- Bandeau partagé via un fragment et un `ControllerAdvice`.
-- BCrypt pour les mots de passe ; migration des anciens mots de passe en clair seulement après une identification réussie.
-
-Ces mécanismes répondent au socle F1 et à la sécurité §7.7 ; ils ne comptent pas comme une fonctionnalité alpha supplémentaire.
-
-### Piste 7 : qualité renforcée — travail engagé
-
-- Contraintes Jakarta Validation sur les données ; validation au niveau des formulaires et du service.
-- Messages français par champ, réaffichage de la saisie et absence d'écriture en cas d'erreur.
-- Gestion centralisée des ressources inexistantes, paramètres invalides, conflits de données et erreurs inattendues.
-- Conservation des statuts HTTP 400, 403, 404, 405, 409 et 500 selon le cas.
-- Page d'erreur commune, lien de retour et bandeau utilisateur si une session est ouverte.
-- Masquage des détails SQL, messages internes et traces techniques dans les réponses.
-
-La validation ne dépend pas du seul JavaScript du navigateur ; elle reste active pour une requête HTTP fabriquée manuellement.
-Les tests d'intégration HTTP/JPA, JaCoCo et l'intégration continue existante contribuent à la piste 7 du sujet. F2 ajoute les tests du catalogue, du filtrage, des cas vides, de RG9 et de l'initialisation de démonstration.
-La validation et les exceptions font aussi partie du socle technique : leur seule présence ne suffit pas à démontrer deux fonctionnalités alpha.
-
-### Deuxième fonctionnalité transverse — à choisir par le groupe
-
-Le second choix alpha reste à définir parmi les pistes du §6 (ou à faire valider par l'enseignant s'il sort de la liste), puis à réaliser progressivement. Cette branche porte exclusivement sur F2 et ne prétend pas satisfaire tout le lot alpha.
-
-### Diagnostic technique complémentaire
-
-Les opérations du service sont journalisées avec leurs identifiants, sans enregistrer les mots de passe ou les formulaires complets dans ces messages.
-Ces logs facilitent le diagnostic ; ce ne sont pas un journal d'audit métier persistant ni une preuve de commit transactionnel.
-
-## Frontend et ergonomie
-
-- Page de connexion Bootstrap, identité visuelle Rail Pulse, libellés et autocomplétion adaptés.
-- Bouton d'affichage du mot de passe utilisable au clavier.
-- Bandeau identique sur les pages privées et pages d'erreur.
-- Formulaires sur une colonne mobile et deux colonnes lorsque la largeur le permet.
-- Champs obligatoires identifiés, erreurs associées aux champs et messages de succès.
-- Fil d'Ariane, annulation, liste vide explicite et tableau à défilement horizontal.
-- Confirmation avant suppression ; le serveur conserve la protection CSRF même si JavaScript est désactivé.
+- Les contr?leurs adaptent le protocole HTTP, valident la saisie et choisissent les vues/redirections.
+- Les services orchestrent les cas d'usage, les horloges, les droits de m?thode et les transactions.
+- Le mod?le porte les invariants d'?tat ; les repositories portent les requ?tes.
+- `SecurityConfig` prot?ge les routes et active les autorisations sur les m?thodes sensibles. `GlobalExceptionHandler` traduit les erreurs attendues vers les bons statuts et masque les d?tails internes.
+- F2/F3 chargent station et incidents avec les relations utiles au rendu ; F5 charge ?quipement/station/prestataire et l'?valuation ?ventuelle. Les vues n'interrogent pas la base.
+- `ExportCatalogueService` transforme une projection SQL en CSV ; son contr?leur ne contient ni SQL ni logique d'?chappement.
+- Le CRUD de programmeurs est un exemple h?rit? du TP, conserv? pour compatibilit? et s?par? du socle Rail Pulse. Il ne compte ni comme F1?F12 ni comme lot alpha.
 
 ## TESTS
 
-Commande complète : `./mvnw.cmd verify` sous Windows, avec Java 21.
-Les tests HTTP démarrent un vrai serveur sur un port aléatoire et utilisent un cookie de session par client.
-Ils s'exécutent sur une base H2 en mémoire, sans toucher à MySQL.
-Depuis la préparation Supabase, H2 utilise le mode PostgreSQL. Des variables `TEST_DB_*` permettent également de lancer les mêmes tests sur un PostgreSQL temporaire, comme décrit dans le guide Supabase.
+Commande : `./mvnw.cmd -B -ntp verify` sous Windows, `bash ./mvnw -B -ntp verify` sous Linux.
 
-| Suite | Vérifications principales |
+Les tests HTTP lancent un vrai serveur sur port al?atoire et manipulent cookies, session et CSRF. Ils v?rifient les ?critures r?elles, les refus et les valeurs conserv?es, et ne se limitent pas ? appeler des accesseurs.
+
+| Domaine | Comportements couverts |
 |---|---|
-| `RailPulseApplicationTests` | Page publique, routes privées, erreurs de connexion, deux profils, formats de mots de passe, migration BCrypt, rotation de session, déconnexion, ancien cookie refusé, CSRF, bandeau et déconnexion depuis chaque page. |
-| `ProgrammeurIntegrationTests` | Création/modification/suppression effectivement persistées, identifiants falsifiés, messages de succès, champs facultatifs, zéro accepté, champs manquants/trop longs, salaire négatif/invalide/non fini, conservation de la saisie et des données, ressource absente, paramètres et méthodes invalides, liste vide, validation du service et CSRF. |
-| `GlobalExceptionHandlerTest` | Messages d'erreur sûrs, conflit de données, statut HTTP conservé et détails internes masqués. |
-| `EquipementIntegrationTests` | Connexion obligatoire, deux profils autorisés, navigation depuis l'accueil, isolation entre stations, tri, types et états, absence de modification lors des lectures, catalogue/station vides, 404/400, échappement HTML et référence unique interstations (RG9). |
-| `FicheEquipementIntegrationTests` / `IncidentTest` | Fiche et incidents de l'équipement, tri RG7, droits, absence de ressource, listes vides, HTML échappé et invariants du modèle incident. |
-| `DeclarationIncidentIntegrationTests` | Déclaration par les deux profils, horloge fixe, validation et limite de longueur, saisie conservée, données client falsifiées, erreurs 400/404, connexion, CSRF et absence de réécriture au rafraîchissement après redirection. |
-| `DetailIncidentIntegrationTests` / `EvaluationTest` | Détail pour les deux profils, durée courante ou arrêtée à la résolution, prestataire, évaluation et commentaire facultatifs, RG8, unicité, HTML échappé, connexion et erreurs 400/404. |
-| `ModificationIncidentIntegrationTests` | Correction par le responsable, agent en lecture seule, interdictions HTTP et service, incidents résolus et formulaire devenu obsolète après résolution, champs falsifiés, validation et limite, données conservées, 400/404/409, CSRF et HTML échappé. |
-| `DonneesDemonstrationIntegrationTests` | Initialisation effective avec le profil `demo`, diversité des données, station vide, absence de doublons au relancement et absence de création de comptes. |
+| F1 | Deux profils BCrypt, formats avec/sans pr?fixe, ?chec g?n?rique, renouvellement de session, bandeau, d?connexion, cookie ancien refus? et CSRF. |
+| F2/F3 | Filtrage par station/?quipement, donn?es affich?es, tri RG7, listes vides, 400/404, XSS et r?f?rence unique RG9. |
+| F4 | Description obligatoire/longueur, horloge fixe, ?tat initial non affect?, absence de prestataire/r?solution, champs falsifi?s, CSRF et refus sans ?criture. |
+| F5 | Dur?e courante ou fig?e ? la r?solution, relations facultatives, RG8, note et unicit? d'?valuation, 400/404 et HTML ?chapp?. |
+| F6 | Responsable autoris?, agent refus? par HTTP et service, ?tat r?solu interdit, formulaire devenu obsol?te apr?s r?solution, validation, champs falsifi?s, CSRF et absence de mutation sur refus. |
+| S?curit? des comptes | Clair et `{noop}` refus?s ? la connexion ; conversion pr?alable en BCrypt, idempotence, rollback d'une migration invalide et refus de nouvelles ?critures non hach?es. |
+| D?monstration | Cr?ation transactionnelle des deux comptes, secrets absents refus?s, profils pr?existants prot?g?s, connexion r?elle, catalogue vari? et relancement sans duplication. |
+| Export CSV | Droits des deux profils, format/encodage/en-t?tes, catalogue vide, guillemets/s?parateurs/retours ligne et neutralisation des formules. |
 
-Vérification F2 du **27/10/2026** : `./mvnw.cmd -B verify` réussie, **28 tests, 0 échec, 0 erreur**, JAR et rapport JaCoCo générés. Compilation ciblant Java 21, exécution sur le JDK 25.0.3 installé sur cette machine. Les huit nouveaux tests tournent sur H2 en mode PostgreSQL ; les bases réelles ne sont pas modifiées par cette vérification. Le rendu visuel et l'exécution de F2 sur MySQL/Supabase restent à contrôler sur l'environnement de démonstration.
+V?rification locale apr?s corrections : **75 tests r?ussis, aucun ?chec ni erreur**, JAR et rapport JaCoCo g?n?r?s (JDK install? 25.0.3, cible Java 21).
+Le JAR a aussi ?t? d?marr? sans configuration de test sur une base H2 fichier neuve : connexion des deux comptes, F2/F3, d?claration F4, d?tail F5, refus d'?dition agent, correction responsable, CSV et d?connexion v?rifi?s par HTTP. Cette instance temporaire a ?t? arr?t?e.
 
-Le rapport [JaCoCo](https://www.jacoco.org/jacoco/trunk/doc/maven.html) est généré dans `target/site/jacoco/index.html` par `verify`.
-Vérification du 14/10/2026 : **20 tests réussis**, construction du JAR réussie, **80,8 % des lignes** et **44,2 % des branches** Java couvertes.
-Les lignes des services d'authentification et de programmeurs et du contrôleur de programmeurs ont été exécutées intégralement, sans que cela constitue une preuve de tous leurs comportements.
-La couverture restante concerne principalement le démarrage du service MySQL Windows et quelques accesseurs de l'entité utilisateur ; aucun test n'a été ajouté uniquement pour augmenter un pourcentage.
-La couverture mesure du code Java exécuté : elle ne prouve ni la justesse de toutes les règles ni le rendu visuel des écrans.
-H2 ne remplace pas une vérification sur MySQL. Le démarrage automatique du service Windows nécessite un contrôle sur la machine de démonstration et n'est pas lancé par les tests isolés.
+La CI ex?cute deux jobs Java 21 : H2, puis PostgreSQL 17 temporaire. Les propri?t?s `TEST_DB_*` sont utilis?es par tous les contextes, y compris F4, suivi et demo, avec des sch?mas isol?s (`railpulse`, `railpulse_f4`, `railpulse_suivi`, `railpulse_demo`). Les rapports et le JAR sont conserv?s comme artifacts. R?sultat du dernier passage ? v?rifier dans l'onglet Actions de la PR.
 
-## Traçabilité
+La couverture JaCoCo est une mesure d'ex?cution, pas une preuve compl?te de conformit?. Le rendu visuel, l'accessibilit? compl?te, la charge, l'environnement Supabase r?el et la compr?hension orale restent des contr?les distincts. Les tests F11 (47/48/72 h) seront ajout?s avec le calcul d'urgence ; les dates de d?monstration seules ne prouvent pas ce calcul.
 
-| Date | Étape | Référence |
-|---|---|---|
-| 12/10/2026 | Renommage Rail Pulse, configuration IntelliJ et démarrage local MySQL | `02ff542` |
-| 14/10/2026 | Connexion JPA au MySQL local | `1e35c1c` |
-| 14/10/2026 | Modèle utilisateur et écran Bootstrap | `b3eae54` |
-| 14/10/2026 | Authentification, fermeture de session et tests HTTP | `309716d` |
-| 14/10/2026 | Bandeau commun et déconnexion depuis chaque page | `b416d3a` |
-| 14/10/2026 | Validation, erreurs centralisées, nettoyage, formulaires et tests CRUD | `85c6c74` |
-| 14/10/2026 | Documentation SOLID, bilan d'évaluation et rapport de couverture | Voir le commit correspondant dans `git log`. |
-| 27/10/2026 | F2 : catalogue des équipements par station, RG9/RG11, profil demo et 8 nouveaux tests | Branche `feature/f2-equipements-par-station` |
+## CHOIX TECHNIQUES
 
-Les commits attestent les étapes enregistrées, pas un temps de travail ou une répartition entre membres.
-L'assistance Codex a été utilisée pour la mise en œuvre et la vérification. L'autonomie du groupe reste à démontrer par la compréhension du code, la reproduction des tests et l'explication des choix lors de la présentation.
+### Droits par profil (?5.6)
 
-## Contrôles manuels avant présentation
+| N? | Fonctionnalit? | AGENT | RESPONSABLE_EXPLOITATION |
+|---|---|---|---|
+| F2?F3 | ?quipements et fiches | Lecture seule | Lecture seule |
+| F4 | D?clarer un incident | Acc?s complet | Acc?s complet |
+| F5?F6 | Consulter / modifier | Lecture F5 ; F6 interdit | Lecture F5 ; correction de description des actifs F6 |
+| F7 | Affecter / r?affecter | Interdit | Acc?s complet pr?vu |
+| F8 | R?soudre | Interdit | Acc?s complet pr?vu |
+| F9 | Historique | Lecture pr?vue | Lecture pr?vue |
+| F10 | ?valuer | Interdit | Acc?s complet pr?vu |
+| F11 | Tableau de bord | Interdit | Lecture pr?vue |
 
-1. Démarrer sur la machine prévue avec le profil de base choisi et, si le catalogue est vide, le profil `demo`.
-2. Se connecter avec un compte de chacun des deux profils.
-3. Vérifier le bandeau, une erreur de saisie, une création, une modification et une suppression.
-4. Vérifier l'annulation de la confirmation de suppression.
-5. Se déconnecter et tenter de rouvrir une page privée.
-6. Examiner les écrans sur mobile et au clavier, ainsi que le chargement du CSS Bootstrap.
-7. Présenter les résultats Maven, le rapport de couverture et les commits.
-8. Depuis l'accueil, ouvrir les équipements, passer d'une station à l'autre, vérifier types/états, station vide, puis accès direct à une station absente.
+F7?F11 d?crivent les choix pour la suite ; leurs ?crans/op?rations ne sont pas r?alis?s. L'export CSV reprend les droits de lecture du catalogue.
 
-L'accessibilité complète, les différences H2/MySQL, la charge et la compatibilité de tous les navigateurs ne sont pas certifiées par les seuls tests présents.
+F6 ne modifie que la description d'un incident actif : les identifiants, dates, ?quipement, statut et affectation restent inchang?s. Les r?solus sont immuables pour pr?server l'historique. Les routes et `@PreAuthorize` v?rifient le r?le ; `Incident` v?rifie l'?tat. La pr?sence/absence du bouton n'est pas la protection serveur.
 
-## 14/10/2026 — Préparation de PostgreSQL/Supabase
+### R?gles et exceptions
 
-- Ajout du pilote PostgreSQL et du profil Supabase par défaut ; l'ancien accès local passe dans le profil `mysql`.
-- Configuration par `SUPABASE_DB_URL`, `SUPABASE_DB_USERNAME`, `SUPABASE_DB_PASSWORD`, utilisables comme secrets CI/CD.
-- Fichier local de paramètres ignoré par Git et exemple sans secret versionné.
-- SSL et pool de connexions limité ; schéma JPA dédié `railpulse` séparé de `public`.
-- Conservation de l'authentification applicative existante, sans utilisation de la clé de la Data API.
-- Documentation des connexions directe et Session pooler, sans déduire un hôte de pooler non fourni.
-- Le mot de passe PostgreSQL n'a pas été fourni ; la connexion réelle à Supabase reste à confirmer. La clé d'API ne peut pas le remplacer.
-- Aucune migration de données de l'ancienne base MySQL n'est effectuée automatiquement.
-- Vérification : 20 tests réussis sur H2 en mode PostgreSQL, puis les mêmes 20 tests sur PostgreSQL 18 temporaire avec création du schéma `railpulse`. Le serveur de test a été arrêté après la vérification. Cela valide le dialecte PostgreSQL, pas la connectivité au projet Supabase distant.
-- Diagnostic du lancement IntelliJ : `UnknownHostException` sur l'hôte Supabase direct. Ajout de deux configurations explicites MySQL local / Supabase pour éviter de confondre les environnements. Démarrage du JAR avec le profil MySQL vérifié sur un port temporaire : `/login` répond HTTP 200 ; cette instance de vérification a ensuite été arrêtée.
-- Le lancement habituel sans profil continuait de choisir Supabase : le profil par défaut est finalement rétabli à `mysql`. L'utilisation distante reste explicite via `SPRING_PROFILES_ACTIVE=supabase` ou la configuration IntelliJ dédiée. La documentation CI/CD est alignée sur ce choix.
+- RG1/RG2 : incident li? ? l'?quipement de l'URL, ouverture calcul?e par `Clock`, statut initial non affect? sans prestataire.
+- RG5 : le mod?le interdit r?solution ant?rieure ? l'ouverture et r?affectation d'un r?solu ; F7/F8 ne sont pas encore expos?es.
+- RG7 : incidents d'un ?quipement tri?s par ouverture d?croissante, puis identifiant d?croissant. L'historique global F9 reste ? r?aliser.
+- RG8 : ?valuation d'un r?solu avec prestataire, note 1?5, date coh?rente et unicit? en base ; F10 n'a pas encore d'interface.
+- RG9 : r?f?rence d'?quipement unique en base, test?e entre stations.
+- RG10/RG11 : transactions, contr?les d'?tat et droits c?t? serveur. Les seuils/calculs et listes F11 li?s ? RG3/RG4/RG6 restent ? r?aliser.
+
+`@ControllerAdvice` est conserv? pour uniformiser les pages d'erreur. Les exceptions personnalis?es utilisent des messages fran?ais : 400 pour une saisie/identifiant invalide, 403 pour un droit insuffisant, 404 pour une ressource absente, 409 pour un ?tat interdit ou un conflit. Une erreur inattendue renvoie 500 avec un message neutre ; aucune trace SQL n'est envoy?e dans la page. `ResponseEntity` n'est pas n?cessaire aux vues actuelles ; le CSV ?crit des en-t?tes HTTP explicites.
+
+### SOLID
+
+- **SRP appliqu?** : contr?leurs HTTP, orchestration dans les services, invariants dans `Incident`/`Evaluation`, acc?s aux donn?es dans les repositories, format CSV dans son service et erreurs dans l'advice. Chaque responsabilit? a une raison de changement diff?rente.
+- **DIP appliqu? au d?coupage utilis?** : injection par constructeur d'interfaces de repository et de `PasswordEncoder`, au lieu d'impl?mentations JDBC construites par les services.
+- **OCP** : aucune hi?rarchie de strat?gies artificielle ; les points d'extension Spring suffisent aux besoins actuels. Une strat?gie sera extraite si un v?ritable point de variation appara?t.
+- **LSP** : pas de hi?rarchie m?tier de sous-types interchangeables ? introduire ; les contrats Spring sont utilis?s sans sous-types artificiels.
+- **ISP** : repositories s?par?s par entit? et services cibl?s. Ajouter un wrapper par m?thode JPA ne r?pondrait ? aucun consommateur distinct.
+
+### Persistance et unique requ?te SQL native (?7.6)
+
+Tous les repositories actifs d?clarent une requ?te utile. Les requ?tes d?riv?es (utilisateurs, stations, ?valuations, tri du TP) compl?tent les JPQL (catalogue, d?tails, historique d'?quipement et verrouillage).
+
+L'unique requ?te native de `src/main/java` se trouve dans `EquipementRepository.exporterCatalogue`. Elle joint ?quipements et stations et renvoie uniquement les cinq colonnes du CSV, d?j? tri?es, au lieu d'hydrater des entit?s et d'acc?der ? des associations par ligne.
+
+**Analyse critique :** la requ?te contr?le directement colonnes et jointure, mais d?pend des noms physiques de tables/colonnes et d'une projection dont les alias doivent rester coh?rents. JPQL aurait offert une abstraction plus forte ; le choix natif est limit? ? cet export et satisfait l'exercice, sans disperser du SQL dans les contr?leurs. Le SQL produit utilise une jointure et un tri standards ; `{h-schema}` est un jeton sp?cifique ? Hibernate pour qualifier correctement les tables selon le sch?ma configur?. Il apporte donc une d?pendance au fournisseur JPA, explicitement assum?e. Le double passage H2/PostgreSQL v?rifie aussi ce point.
+
+R?f?rence : [Hibernate ? sch?mas des requ?tes natives](https://docs.hibernate.org/stable/orm/userguide/html_single/#sql-global-catalog-schema).
+
+### Transactions
+
+- Lectures `EquipementService` et `IncidentService` : `readOnly=true` pour regrouper les requ?tes et charger les relations n?cessaires aux vues.
+- D?claration F4 : transaction d'?criture regroupant lecture de l'?quipement et insertion d'incident.
+- Correction F6 : verrou `PESSIMISTIC_WRITE` sur la ligne incident avant le contr?le d'?tat ; le dirty checking persiste la correction sans recopier les champs client. La derni?re correction valide est conserv?e, sans fusion de deux descriptions concurrentes.
+- Initialisations : catalogue complet et deux comptes cr??s chacun dans leur transaction, avec rollback si une condition ?choue. Un compte existant n'est ni r?affect? ni ?cras?.
+- Migration BCrypt : une transaction pour les comptes ? migrer ; format historique inconnu/vide = rollback complet et d?marrage refus?. Aucun secret n'est journalis?.
+- Export : transaction de lecture pour extraire une vue coh?rente du catalogue.
+- Le CRUD TP conserve ses transactions existantes ; les modifications d'entit?s g?r?es utilisent le dirty checking.
+
+### S?curit? et configuration
+
+Le `PasswordEncoder` n'accepte que BCrypt. `User` impose un format BCrypt sur les nouvelles ?critures JPA. `AuthService` n'accepte plus le clair ni `{noop}` : leur conversion est une migration de donn?es au d?marrage, pas une m?thode d'authentification.
+
+Les deux secrets demo sont fournis par environnement ou saisie locale ; aucun mot de passe par d?faut n'est inscrit dans le code. Le fallback MySQL a ?t? supprim? et sa configuration locale pr?serv?e hors Git. `.env`, `.env.*` et les bases locales sont ignor?s ; `.env.example` ne contient que des valeurs vides ou des param?tres de connexion factices.
+
+La suppression d'une valeur du code courant ne r??crit pas l'historique Git. Une ancienne valeur de base encore utilis?e doit ?tre renouvel?e par son propri?taire. Les tests utilisent uniquement des secrets temporaires sans lien avec la production.
+
+## LOT ALPHA
+
+### 1. Qualit? renforc?e ? piste 7
+
+Besoin : d?tecter les r?gressions du socle et d?montrer le comportement r?el des droits, de la persistance et des exceptions.
+
+R?alis? : tests HTTP/JPA et m?tier, horloge fixe, sc?narios invalides et champs falsifi?s, migration/rollback, JaCoCo, artifacts et deux jobs CI sur Java 21 avec H2 et PostgreSQL. Cela d?passe la seule pr?sence de validation : les transactions, droits et formats produits sont exerc?s.
+
+Limites : couverture d'ex?cution distincte de l'ergonomie et des performances. MySQL n'est pas inclus dans la nouvelle matrice, car le d?ploiement cible PostgreSQL. F7?F12 n?cessiteront leurs propres tests.
+
+### 2. Export de donn?es ? piste 9
+
+Besoin : obtenir un inventaire exploitable du r?seau dans un tableur sans acc?s direct ? la base.
+
+R?alis? : export CSV du catalogue, accessible aux deux profils depuis F2. UTF-8 avec BOM, s?parateur point-virgule, guillemets et retours ligne ?chapp?s, formules neutralis?es, nom de fichier et absence de cache explicites. Une seule requ?te native produit une projection plate tri?e. Catalogue vide et droits test?s.
+
+Limites : catalogue export? en m?moire, adapt? au volume de d?monstration ; un export pagin?/stream? serait pr?f?rable pour un r?seau tr?s volumineux. L'export de l'historique r?solu pourra ?tre ajout? apr?s F9, sans ?tre compt? comme d?j? r?alis?.
+
+Ces deux choix appartiennent aux pistes propos?es au ?6. La s?curit? F1 et CSRF ne sont pas compt?s comme des alpha suppl?mentaires.
 
 ## BILAN
 
-- État au 27/10/2026 : F1 à F6 réalisées ; le CRUD de programmeurs reste un support issu du TP. F7 à F12 restent à développer sur des branches dédiées.
-- Point de conception F2 : distinguer une station absente (404) d'une station existante sans équipement (200), et effectuer le filtrage en base pour éviter de mélanger les stations.
-- Trois points à retenir : séparer HTTP/métier/persistance ; garantir les invariants en base et les droits côté serveur ; tester les comportements attendus avec de vraies requêtes HTTP et une base isolée.
-- Avant rendu : compléter la contribution de chaque membre et la difficulté principale du groupe, le second choix alpha, l'unique requête native et son analyse, les comptes de test et l'URL déployée. La migration des anciens mots de passe en clair de F1 reste une compatibilité historique ; les comptes de démonstration finaux doivent déjà être hachés.
-- La configuration courante utilise `supabase` par défaut (les notes du 14/10 ci-dessus décrivent l'historique). Les secrets éventuels des profils existants doivent rester hors du dépôt conformément au §7.7 ; cette branche F2 n'en ajoute aucun.
+### Groupe et tra?abilit?
 
-## 27/10/2026 — Préparation du déploiement Render
+| Membre | Traces techniques observables dans Git |
+|---|---|
+| Amir Nassiri | Contribution initiale CI/CD et d?ploiement VPS, commit `58646e2` sign? `amirnssr`. |
+| Vincent Carret | Configuration, int?gration des branches, puis commits F2?F6, tests et documentation sous `vincent` / `vincent.carret`. |
 
-- Branche `feature/deploiement-render`, basée sur F2 pour permettre sa démonstration en ligne avant intégration dans `master`.
-- Dockerfile à deux étapes : compilation et tests Java 21, puis exécution du seul JAR avec un JRE Java 21 et un utilisateur sans privilèges. Le tas Java est limité à 60 % de la mémoire du conteneur.
-- `.dockerignore` exclut Git, la configuration locale et les fichiers `.env` du contexte de construction.
-- Profil `render` : port `PORT` fourni par Render, écoute sur toutes les interfaces, en-têtes du proxy HTTPS, cookie sécurisé et absence de SQL dans les logs. Les identifiants Supabase sont fournis par variables d'environnement.
-- Paramètres de création du Web Service et procédure de contrôle : [docs/render.md](docs/render.md).
-- Docker n'est pas installé sur cette machine : la construction de l'image et le démarrage sur Render restent à vérifier lors du déploiement. L'URL publique sera renseignée une fois le service démarré.
-- Vérification locale après ajout de la configuration : `./mvnw.cmd -B verify`, 28 tests réussis et JAR généré (JDK local 25.0.3, cible Java 21). Le Dockerfile prévoit de réexécuter ces tests avec le JDK 21 pendant la construction sur Render.
+Les noms du groupe ont ?t? fournis par les membres. Cette table d?crit l'historique, pas une mesure de temps ni une r?partition compl?te du travail hors Git. Chaque membre doit compl?ter/valider sa contribution r?elle et savoir expliquer la solution. L'assistance Codex pour le code, les tests et les revues est d?clar?e ; elle ne prouve pas la ma?trise orale du groupe.
 
-## 27/10/2026 — F3 : fiche équipement et incidents
+PR d?j? int?gr?es : F1/CI (#1?#2), F2 (#3), Render (#4), F3 (#5), F4 (#6), F5 (#7), F6 (#8). Les corrections de conformit? sont isol?es sur `fix/conformite-mi-parcours`, avec PR de revue.
 
-- Branche `feature/f3-fiche-equipement`. Depuis F2, la référence ouvre la fiche `/equipements/{id}` : informations de l'équipement, lien vers sa station et liste de tous ses incidents, y compris résolus.
-- Ajout des entités `Incident`, `StatutIncident` et `Prestataire`, avec une relation obligatoire vers l'équipement, une description de 2000 caractères maximum, les dates d'ouverture/résolution et un prestataire facultatif. Ces données couvrent le minimum du §4 pour préparer F4.
-- `EquipementService.consulterEquipement` regroupe les lectures dans sa transaction en lecture seule ; les `join fetch` chargent la station et les prestataires nécessaires à la vue sans dépendre d'Open Session in View ni provoquer de requête par ligne.
-- `IncidentRepository.rechercherParEquipement` filtre en base et ordonne par ouverture décroissante puis identifiant décroissant (RG7). Un équipement absent produit une exception personnalisée et une page 404. Une liste vide produit une page 200 explicite.
-- Les GET `/equipements/**` exigent un profil AGENT ou RESPONSABLE_EXPLOITATION côté serveur (RG11). Les données sont échappées par Thymeleaf ; le bandeau et la déconnexion F1 restent disponibles.
-- Le modèle initialise l'état non affecté sans prestataire. Ses méthodes d'affectation/résolution garantissent des données de démonstration cohérentes : refus d'affecter un incident résolu, date de résolution au moins égale à l'ouverture (RG1/RG2/RG5). Aucun endpoint F7/F8 n'est exposé.
-- Une horloge `Clock.systemUTC()` injectée rend les dates explicites et permettra les tests déterministes de F4/F11. Les vues indiquent UTC. Les couleurs des statuts ne représentent pas les seuils d'urgence F11.
-- Le profil `demo` crée sur un catalogue neuf cinq incidents aux dates relatives (dont 47/48/72 h), un prestataire, des cas affectés/résolus et des équipements sans incident ; un catalogue existant reste intact.
-- Tests ajoutés : `FicheEquipementIntegrationTests` (deux profils, navigation, isolement entre équipements, tri, état vide, 400/404, connexion obligatoire et échappement HTML), `IncidentTest` (invariants et refus sans mutation). Le test du profil demo vérifie aussi les incidents et l'absence de doublons.
-- Vérification F3 : `./mvnw.cmd -B verify` réussie, **38 tests, aucun échec ni erreur**, JAR et rapport JaCoCo générés. Exécution locale sur JDK 25.0.3, cible Java 21 ; la CI de la PR exécute les mêmes vérifications sous Java 21. Les tests HTTP/JPA utilisent H2 et ne modifient pas Supabase.
+### Difficult?s techniques observ?es
 
-## 27/10/2026 — F4 : déclarer un incident
+- L'acceptation du clair ? la connexion masquait un ?cart de s?curit? : migration transactionnelle pr?alable, BCrypt seul ? la connexion et validation de persistance.
+- Une valeur de secours MySQL et l'absence de comptes reproductibles emp?chaient une configuration s?re : secrets hors Git, comptes param?tr?s et script autonome H2.
+- Une CI annon?ait MySQL alors que les tests for?aient H2 : correction des propri?t?s de tous les contextes et ajout d'un vrai job PostgreSQL avec sch?mas isol?s.
 
-- Branche `feature/f4-declaration-incident`, basée sur F3. F3 est intégrée en premier (PR #5) ; la PR F4 vise ensuite `master` pour présenter uniquement la déclaration.
-- Parcours : fiche équipement → formulaire GET `/equipements/{id}/incidents/nouveau` → POST `/equipements/{id}/incidents` → redirection vers la fiche avec confirmation et liste actualisée.
-- `DescriptionIncident` est l'objet de saisie limité à la description (non blanche, 2000 caractères maximum), commun à F4 et F6. Le contrôleur lie explicitement ce seul champ. Les erreurs conservent les valeurs avec des messages français ; une ressource absente reste une 404, y compris si la description est invalide.
-- `IncidentService.declarer` porte la transaction d'écriture et utilise l'équipement trouvé par l'URL et l'horloge injectée. Le modèle impose l'état initial non affecté sans prestataire ni résolution (RG1/RG2). La validation du service ne peut pas être contournée par un appel direct.
-- L'identifiant de l'incident est généré par JPA ; les champs de statut/date/prestataire/équipement transmis artificiellement ne peuvent ni modifier un incident existant ni détourner la cible.
-- Les deux profils peuvent déclarer un incident. La route POST vérifie le rôle côté serveur et conserve CSRF ; l'écran GET reste protégé (RG11). Les secrets Supabase et le fichier `.env` ne sont pas impliqués dans les tests.
-- Le schéma Post/Redirect/Get évite de redéclarer l'incident quand on rafraîchit la page après succès. Les espaces de début et de fin sont retirés après validation ; le texte intérieur est conservé et affiché échappé.
-- Aucun changement automatique de l'état de l'équipement : un incident peut être une anomalie sans arrêt de fonctionnement. Plusieurs incidents restent autorisés, car le sujet ne prescrit pas de limite à ce stade.
-- Tests ajoutés : création par les deux profils avec horloge fixe, présence sur la fiche, statut et dates serveur, description vide/blanche/trop longue, limite exacte, conservation de la saisie, champs falsifiés, équipement absent, identifiant invalide, connexion et CSRF, échappement HTML et validation du service.
-- Vérification F4 : `./mvnw.cmd -B verify` réussie, **45 tests, aucun échec ni erreur**, JAR et rapport JaCoCo générés. Exécution locale sur JDK 25.0.3, cible Java 21 ; les tests de déclaration utilisent une horloge fixe et une base H2 dédiée, sans toucher à Supabase.
+Ces difficult?s sont attest?es par les corrections ; le groupe doit pr?ciser laquelle il consid?re comme sa difficult? principale.
 
-## 27/10/2026 — F5 : détail d'un incident
+### Reste ? faire
 
-- Branche `feature/f5-detail-incident`, avec PR vers `master`. F5 respecte le §5.3 : description, équipement, station, durée d'ouverture, prestataire éventuel et évaluation éventuelle.
-- Le numéro d'incident dans la fiche équipement ouvre `/incidents/{id}`. Les deux profils sont autorisés en lecture, avec vérification du rôle côté serveur (RG11). Le bandeau utilisateur et la déconnexion restent présents.
-- `IncidentService.consulter` calcule la durée via l'horloge UTC injectée : ouverture → heure courante pour les actifs, ouverture → résolution pour les résolus. La durée n'est pas stockée en base. Une ouverture future importée est présentée avec une durée nulle plutôt que négative.
-- Le service reste indépendant des vues et le contrôleur prépare seulement le modèle HTTP (SRP). Les lectures sont regroupées dans `@Transactional(readOnly = true)` ; la requête JPQL charge l'équipement, sa station et le prestataire pour éviter des accès différés pendant le rendu.
-- `IncidentIntrouvableException` et le `ControllerAdvice` existant produisent une page 404 en français ; les identifiants invalides produisent 400. Les textes sont échappés par Thymeleaf et les champs facultatifs ont des états vides lisibles.
-- Le modèle `Evaluation` permet la lecture de l'évaluation demandée par F5. Il impose un incident résolu avec prestataire, une note entre 1 et 5 et une date au moins égale à la résolution ; une contrainte unique en base garantit une évaluation par incident (RG8). Le repository utilise une requête dérivée `findByIncidentId`. La saisie F10 reste hors périmètre.
-- Le profil demo ajoute une évaluation à l'incident résolu sur un catalogue neuf, dans sa transaction existante. Les catalogues déjà renseignés ne sont pas remplacés.
-- Vérification : `./mvnw.cmd -B verify`, **54 tests réussis**, aucun échec ni erreur, JAR et rapport JaCoCo générés. Horloge fixe et H2 dédiée pour les nouveaux tests ; JDK local 25.0.3, cible Java 21. Les vérifications de la PR sont exécutées sous Java 21 ; le rendu navigateur et la base distante restent à contrôler dans l'environnement de démonstration.
-- Secrets : `.env` / `.env.*` sont ignorés par Git (tous dossiers), `.env.example` reste réservé à des exemples sans secret. Vérification `git check-ignore` réussie et aucun `.env` suivi par Git ; aucun secret n'a été ajouté à la branche.
+F7?F12 : affectation, r?solution, historique global, saisie d'?valuation, tableau de bord/urgence (48/72 h) et API REST document?e OpenAPI. Les d?monstrations navigateur sur Render, la rotation ?ventuelle d'un ancien secret et la validation humaine du bilan restent ? effectuer. La conformit? finale n'est pas d?clar?e acquise ? mi-parcours.
 
-## 27/10/2026 — F6 : modification autorisée d'un incident
-
-- Branche `feature/f6-modification-incident`, basée sur F5, avec PR vers la branche F5 pour séparer la revue. Les deux PR restent ouvertes à la demande du groupe ; F5 est à intégrer avant de recibler F6 sur `master`.
-- Choix du groupe pour F6 (§5.3/§5.6) : seul le RESPONSABLE_EXPLOITATION corrige la description des incidents encore actifs (non affectés ou affectés). L'AGENT consulte ; les incidents résolus ne sont plus modifiables. La justification est la conservation de l'historique et des données de prise en charge.
-- Les routes GET `/incidents/{id}/modifier` et POST `/incidents/{id}` contrôlent le rôle. `@EnableMethodSecurity` et `@PreAuthorize` sur `IncidentService.preparerModification` / `modifierDescription` protègent aussi les appels directs au service (RG11). `DroitsIncident` prépare la capacité d'affichage du bouton ; masquer ce bouton n'est pas la protection de sécurité.
-- `Incident.isModifiable` / `verifierModifiable` portent la règle d'état dans le modèle, et `modifierDescription` ne change que ce champ. Une opération sur un incident résolu renvoie une exception personnalisée traduite en 409. Aucun contrôleur ni template ne réalise la transition ni ne décide de la règle d'état.
-- L'ancienne saisie `DeclarationIncident` devient `DescriptionIncident`, partagée par F4/F6 avec les mêmes contraintes Jakarta Validation. Un fragment Thymeleaf commun évite de dupliquer les champs et les messages. Les contrôleurs ont une liste explicite de champs autorisés ; les identifiants et propriétés supplémentaires sont ignorés.
-- `IncidentService.modifierDescription` utilise une transaction d'écriture et une requête JPQL munie de `PESSIMISTIC_WRITE` sur la seule ligne incident. Le verrou est pris avant de vérifier l'état courant : une résolution déjà enregistrée interdit la correction, et une résolution concurrente attend la fin de cette correction. Le dirty checking persiste la correction sans recopier les champs envoyés par le client (RG10).
-- Les corrections concurrentes de description sont sérialisées : la dernière correction valide est conservée. Il n'y a pas de version de formulaire ni de fusion automatique de deux textes.
-- Les paramètres invalides, ressources absentes et états interdits gardent 400, 404 et 409. Les saisies refusées conservent les valeurs du formulaire et ne changent pas la base. Les POST conservent CSRF ; une réussite utilise Post/Redirect/Get et un message de confirmation.
-- SRP est conservé : contrôleurs pour le parcours HTTP, service pour l'orchestration/transaction, modèle pour la règle d'état, repositories pour l'accès aux données. Le service dépend des interfaces JPA injectées (DIP). Aucune hiérarchie supplémentaire ni requête native artificielle n'est introduite ; l'unique SQL natif attendu pour le projet complet reste à réaliser dans une fonctionnalité adaptée.
-- Référence pour la sécurité des méthodes : [documentation officielle Spring Security](https://docs.spring.io/spring-security/reference/7.0/servlet/authorization/method-security.html).
-- Vérifications manuelles prévues : se connecter comme agent (lecture et URL d'édition refusée), puis comme responsable (correction d'un actif, erreurs de saisie, annulation), tenter la modification d'un résolu et vérifier la conservation des dates/statut/affectation. Le rendu visuel et l'exécution sur Supabase ne sont pas certifiés par les tests H2.
-- Vérification automatisée : `./mvnw.cmd -B verify`, **63 tests réussis**, aucun échec ni erreur, JAR et rapport JaCoCo générés (JDK local 25.0.3, cible Java 21). Les tests F4 continuent à passer après mutualisation du formulaire ; les neuf tests F6 couvrent les droits HTTP et service, les saisies invalides, les champs falsifiés, l'incident résolu après ouverture du formulaire et les refus sans mutation. Aucun secret de production ni accès à Supabase n'est nécessaire.
+Trois acquis : s?parer HTTP, m?tier et donn?es ; faire respecter invariants/droits c?t? serveur ; v?rifier les succ?s et les refus par des tests reproductibles sur des bases isol?es.

@@ -3,6 +3,9 @@
 .idea
 .mvn
 target
+.data
+*.mv.db
+*.trace.db
 out
 config
 docs

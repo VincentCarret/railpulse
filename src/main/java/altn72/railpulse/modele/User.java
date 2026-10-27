@@ -1,6 +1,9 @@
 package altn72.railpulse.modele;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 @Entity
 @Table(name = "users")
@@ -11,16 +14,21 @@ public class User {
     private Long id;
 
     @Column(nullable = false, unique = true)
+    @NotBlank(message = "Le login est obligatoire.")
     private String login;
 
     @Column(nullable = false)
+    @NotBlank(message = "Le mot de passe haché est obligatoire.")
+    @Pattern(regexp = FormatMotDePasse.BCRYPT, message = "Le mot de passe doit être haché avec BCrypt.")
     private String password;
 
     @Column(nullable = false)
+    @NotBlank(message = "Le prénom est obligatoire.")
     private String prenom;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @NotNull(message = "Le profil est obligatoire.")
     private Profil profil;
 
     public User() {
@@ -32,8 +40,6 @@ public class User {
         this.prenom = prenom;
         this.profil = profil;
     }
-
-    // Getters et Setters
 
     public Long getId() {
         return id;
