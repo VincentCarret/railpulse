@@ -74,3 +74,9 @@ Les erreurs de saisie conservent les valeurs du formulaire ; les erreurs HTTP ut
 
 Le [journal du projet](journal.md) explique SOLID, les droits par profil, l'état du lot alpha, les règles, les tests et les limites de la vérification.
 Les [notes du TP initial](docs/journal-tp5.md) sont archivées séparément.
+
+## Déploiement Render
+
+Créer un **Web Service** avec **Language = Docker** et suivre le [guide Render](docs/render.md) pour les champs et les variables Supabase.
+Le `Dockerfile` exécute `mvn verify` sous Java 21 avant de construire l'image d'exécution. Le profil `render` configure le port fourni par l'hébergeur et les sessions HTTPS.
+La branche `feature/deploiement-render` contient cette configuration et F2. Les identifiants de base se renseignent dans les variables d'environnement de Render.

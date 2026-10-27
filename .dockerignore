@@ -1,0 +1,13 @@
+.git
+.github
+.idea
+.mvn
+target
+out
+config
+docs
+deploy
+.env
+.env.*
+*.log
+*.iml
