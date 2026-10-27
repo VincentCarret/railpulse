@@ -279,3 +279,13 @@ L'accessibilité complète, les différences H2/MySQL, la charge et la compatibi
 - Trois points à retenir : séparer HTTP/métier/persistance ; garantir les invariants en base et les droits côté serveur ; tester les comportements attendus avec de vraies requêtes HTTP et une base isolée.
 - Avant rendu : compléter la contribution de chaque membre et la difficulté principale du groupe, le second choix alpha, l'unique requête native et son analyse, les comptes de test et l'URL déployée. La migration des anciens mots de passe en clair de F1 reste une compatibilité historique ; les comptes de démonstration finaux doivent déjà être hachés.
 - La configuration courante utilise `supabase` par défaut (les notes du 14/10 ci-dessus décrivent l'historique). Les secrets éventuels des profils existants doivent rester hors du dépôt conformément au §7.7 ; cette branche F2 n'en ajoute aucun.
+
+## 27/10/2026 — Préparation du déploiement Render
+
+- Branche `feature/deploiement-render`, basée sur F2 pour permettre sa démonstration en ligne avant intégration dans `master`.
+- Dockerfile à deux étapes : compilation et tests Java 21, puis exécution du seul JAR avec un JRE Java 21 et un utilisateur sans privilèges. Le tas Java est limité à 60 % de la mémoire du conteneur.
+- `.dockerignore` exclut Git, la configuration locale et les fichiers `.env` du contexte de construction.
+- Profil `render` : port `PORT` fourni par Render, écoute sur toutes les interfaces, en-têtes du proxy HTTPS, cookie sécurisé et absence de SQL dans les logs. Les identifiants Supabase sont fournis par variables d'environnement.
+- Paramètres de création du Web Service et procédure de contrôle : [docs/render.md](docs/render.md).
+- Docker n'est pas installé sur cette machine : la construction de l'image et le démarrage sur Render restent à vérifier lors du déploiement. L'URL publique sera renseignée une fois le service démarré.
+- Vérification locale après ajout de la configuration : `./mvnw.cmd -B verify`, 28 tests réussis et JAR généré (JDK local 25.0.3, cible Java 21). Le Dockerfile prévoit de réexécuter ces tests avec le JDK 21 pendant la construction sur Render.
