@@ -2,6 +2,7 @@ package altn72.railpulse.controleur;
 
 import altn72.railpulse.service.EquipementService;
 import altn72.railpulse.service.EquipementsStation;
+import altn72.railpulse.service.FicheEquipement;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,5 +29,13 @@ public class EquipementControleur {
         model.addAttribute("stationSelectionnee", consultation.station());
         model.addAttribute("equipements", consultation.equipements());
         return "equipements";
+    }
+
+    @GetMapping("/equipements/{id}")
+    public String fiche(@PathVariable Long id, Model model) {
+        FicheEquipement fiche = equipementService.consulterEquipement(id);
+        model.addAttribute("equipement", fiche.equipement());
+        model.addAttribute("incidents", fiche.incidents());
+        return "ficheEquipement";
     }
 }

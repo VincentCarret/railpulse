@@ -21,4 +21,9 @@ body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #102e32; ba
 .equipment-state[data-etat="EN_SERVICE"] { background: #e4f3e9; color: #205536; }
 .equipment-state[data-etat="EN_PANNE"] { background: #fbe7e5; color: #8b2923; }
 .equipment-state[data-etat="EN_MAINTENANCE"] { background: #e5edf9; color: #264f87; }
+.incident-description { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 220px; }
+.incident-status { display: inline-block; padding: 5px 10px; border-radius: 6px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.incident-status[data-statut="NON_AFFECTE"] { background: #edf0ee; color: #344b42; }
+.incident-status[data-statut="AFFECTE"] { background: #e5edf9; color: #264f87; }
+.incident-status[data-statut="RESOLU"] { background: #e4f3e9; color: #205536; }
 @media (max-width: 640px) { .app-header { align-items: flex-start; gap: 16px; padding: 18px 20px; }.app-brand { font-size: 23px; }.user-session { gap: 5px 8px; font-size: 12px; }.home-content { margin-top: 36px; }.home-content h1 { font-size: 28px; } }

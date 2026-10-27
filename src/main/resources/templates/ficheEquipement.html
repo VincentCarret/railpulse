@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|${equipement.reference} · Rail Pulse|"></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="container page-content">
+    <nav aria-label="Fil d’Ariane" class="mb-4">
+        <a th:href="@{/}">Accueil</a> / <a th:href="@{/stations}">Stations</a> /
+        <a th:href="@{/stations/{id}/equipements(id=${equipement.station.id})}" th:text="${equipement.station.nom}"></a> /
+        <span th:text="${equipement.reference}" aria-current="page"></span>
+    </nav>
+    <p class="section-label">FICHE ÉQUIPEMENT</p>
+    <h1 th:text="${equipement.libelle}"></h1>
+    <dl class="form-card row mx-0 my-4">
+        <dt class="col-sm-4">Référence</dt><dd class="col-sm-8" th:text="${equipement.reference}"></dd>
+        <dt class="col-sm-4">Station</dt><dd class="col-sm-8" th:text="${equipement.station.nom}"></dd>
+        <dt class="col-sm-4">Type</dt><dd class="col-sm-8" th:text="${equipement.type.libelle}"></dd>
+        <dt class="col-sm-4">État de fonctionnement</dt>
+        <dd class="col-sm-8"><span class="equipment-state" th:attr="data-etat=${equipement.etatFonctionnement}"
+                                  th:text="${equipement.etatFonctionnement.libelle}"></span></dd>
+    </dl>
+    <section aria-labelledby="incidents-titre">
+        <h2 id="incidents-titre" class="h4">Incidents en cours et passés</h2>
+        <p class="text-secondary">Du plus récent au plus ancien, selon la date d’ouverture. Horaires en UTC.</p>
+        <p th:if="${#lists.isEmpty(incidents)}" class="alert alert-info" role="status">Aucun incident enregistré pour cet équipement.</p>
+        <div th:unless="${#lists.isEmpty(incidents)}" class="table-responsive table-card" tabindex="0"
+             aria-label="Incidents de cet équipement, défilement horizontal possible">
+            <table class="table align-middle mb-0">
+                <caption class="visually-hidden">Tous les incidents de cet équipement, ouverts et résolus.</caption>
+                <thead><tr><th scope="col">Incident</th><th scope="col">Description</th><th scope="col">Ouverture (UTC)</th>
+                    <th scope="col">Statut</th><th scope="col">Prestataire</th><th scope="col">Résolution (UTC)</th></tr></thead>
+                <tbody>
+                <tr th:each="incident : ${incidents}">
+                    <th scope="row" th:text="|#${incident.id}|"></th>
+                    <td class="incident-description" th:text="${incident.description}"></td>
+                    <td class="text-nowrap" th:text="${#temporals.format(incident.dateOuverture, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td><span class="incident-status" th:attr="data-statut=${incident.statut}" th:text="${incident.statut.libelle}"></span></td>
+                    <td th:text="${incident.prestataire != null ? incident.prestataire.nom : 'Non affecté'}"></td>
+                    <td class="text-nowrap" th:text="${incident.dateResolution != null ? #temporals.format(incident.dateResolution, 'dd/MM/yyyy HH:mm') : 'En cours'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <a class="btn btn-outline-secondary mt-4" th:href="@{/stations/{id}/equipements(id=${equipement.station.id})}">Retour aux équipements de la station</a>
+</main>
+</body>
+</html>

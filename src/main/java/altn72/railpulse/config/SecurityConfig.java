@@ -30,7 +30,7 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/login", "/css/**", "/js/**", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/stations", "/stations/**")
+                        .requestMatchers(HttpMethod.GET, "/stations", "/stations/**", "/equipements/**")
                         .hasAnyRole("AGENT", "RESPONSABLE_EXPLOITATION")
                         .anyRequest().authenticated())
                 .formLogin(form -> form.loginPage("/login")
