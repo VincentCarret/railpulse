@@ -1,7 +1,7 @@
 package altn72.railpulse.controleur;
 
 import altn72.railpulse.modele.Incident;
-import altn72.railpulse.service.DeclarationIncident;
+import altn72.railpulse.service.DescriptionIncident;
 import altn72.railpulse.service.EquipementService;
 import altn72.railpulse.service.IncidentService;
 import jakarta.validation.Valid;
@@ -35,13 +35,13 @@ public class IncidentControleur {
 
     @GetMapping("/nouveau")
     public String nouveau(@PathVariable Long equipementId, Model model) {
-        model.addAttribute("declarationIncident", new DeclarationIncident());
+        model.addAttribute("declarationIncident", new DescriptionIncident());
         return formulaire(equipementId, model);
     }
 
     @PostMapping
     public String declarer(@PathVariable Long equipementId,
-                           @Valid @ModelAttribute("declarationIncident") DeclarationIncident declaration,
+                           @Valid @ModelAttribute("declarationIncident") DescriptionIncident declaration,
                            BindingResult erreurs, Model model, RedirectAttributes redirection) {
         if (erreurs.hasErrors()) {
             return formulaire(equipementId, model);
