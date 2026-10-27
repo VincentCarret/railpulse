@@ -14,7 +14,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
 @Import(SuiviIncidentIntegrationTestSupport.HorlogeTest.class)
-@TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:suivi-tests;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
+@TestPropertySource(properties = {
+        "spring.datasource.url=${TEST_DB_URL:jdbc:h2:mem:suivi-tests;MODE=PostgreSQL;DB_CLOSE_DELAY=-1}",
+        "spring.jpa.properties.hibernate.default_schema=${TEST_DB_SCHEMA_SUIVI:public}"
+})
 abstract class SuiviIncidentIntegrationTestSupport extends CatalogueIntegrationTestSupport {
     protected static final LocalDateTime MAINTENANT = LocalDateTime.of(2026, 10, 27, 12, 0);
 

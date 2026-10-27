@@ -14,6 +14,7 @@
     <p class="section-label">LE RÉSEAU</p>
     <h1>Équipements par station</h1>
     <p class="text-secondary">Choisissez une station pour consulter ses équipements et leur état de fonctionnement.</p>
+    <a class="btn btn-outline-success" th:href="@{/stations/export.csv}">Exporter le catalogue (CSV)</a>
 
     <nav aria-label="Choisir une station" class="station-list my-4" th:unless="${#lists.isEmpty(stations)}">
         <a th:each="station : ${stations}" class="btn btn-outline-success"

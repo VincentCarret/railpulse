@@ -1,5 +1,8 @@
 target/
 out/
+.data/
+*.mv.db
+*.trace.db
 .idea/workspace.xml
 .idea/dataSources*
 .idea/httpRequests/

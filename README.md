@@ -1,136 +1,81 @@
 # Rail Pulse
 
-Application Spring Boot avec Java 21, Maven, Thymeleaf et PostgreSQL/Supabase.
+Projet ALTN72 2026-2027 — **Amir Nassiri et Vincent Carret**.
+Application Java 21 / Spring Boot 4.1.1, Maven, Thymeleaf et JPA. PostgreSQL/Supabase pour le déploiement ; H2 pour la démonstration autonome et les tests rapides.
 
-## IntelliJ IDEA
+F1 à F6 sont réalisées. Le [journal](journal.md) justifie les choix et le [bilan de conformité](docs/etat-des-lieux.md) distingue le réalisé du reste à faire.
 
-Ouvrir ce dossier comme projet et recharger Maven depuis `pom.xml` (Reload All Maven Projects).
-Le SDK cible du projet est Java 21 ; configurer `JAVA_HOME` avec le chemin du JDK installé sur votre machine.
-Lancer `RailPulseApplication` dans le package `altn72.railpulse`.
-Le profil par défaut est `supabase`. Pour MySQL local, définir `SPRING_PROFILES_ACTIVE=mysql`. Pour Supabase, sélectionner **Rail Pulse - Supabase** ou définir `SPRING_PROFILES_ACTIVE=supabase`, puis configurer les identifiants PostgreSQL selon le [guide Supabase](docs/supabase.md).
+## Démarrer depuis un clone propre sous Windows
 
-## Compilation sous PowerShell
+Prérequis : JDK 21 (ou version compatible supérieure) accessible par `java` et `JAVA_HOME`, accès Internet pour télécharger les dépendances Maven. Aucun serveur de base de données n'est requis pour cette démonstration.
 
 ```powershell
-# Adapter ce chemin à votre installation de Java 21.
-$env:JAVA_HOME = 'C:\chemin\vers\jdk-21'
-.\mvnw.cmd -DskipTests package
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/demarrer-demo.ps1
 ```
 
-Pour Supabase, les valeurs sont renseignées directement dans `src/main/resources/application-supabase.properties`. Le mot de passe PostgreSQL reste à remplir. Pour le futur CI/CD, les variables standard `SPRING_DATASOURCE_PASSWORD`, `SPRING_DATASOURCE_URL` et `SPRING_DATASOURCE_USERNAME` peuvent remplacer ces valeurs.
-Une clé API `sb_secret_*` ne remplace pas le mot de passe PostgreSQL.
-Les tables JPA sont créées dans le schéma dédié `railpulse` ; les comptes et données de l'ancienne base MySQL ne sont pas automatiquement transférés.
+Le script lit uniquement les deux secrets de démonstration du `.env` local s'il existe ; sinon il les demande sans affichage. Choisir au moins 12 caractères. Il construit le JAR, lance une base relationnelle H2 locale dans `.data/` et initialise stations, équipements, incidents, prestataire, évaluation et comptes.
 
-La configuration locale avec le profil `mysql` utilise `localhost:3305/Base_ALTN72` et peut démarrer le service Windows `MySQL95` si nécessaire.
-Les tests utilisent par défaut une base H2 temporaire en mode PostgreSQL et ne modifient ni Supabase ni MySQL : `.\mvnw.cmd test`.
+Ouvrir **http://localhost:8080/login** :
 
-## Connexion et déconnexion
+| Profil | Login | Mot de passe |
+|---|---|---|
+| Agent | `demo.agent` | Valeur locale `RAILPULSE_DEMO_AGENT_PASSWORD` |
+| Responsable d'exploitation | `demo.responsable` | Valeur locale `RAILPULSE_DEMO_RESPONSABLE_PASSWORD` |
 
-Ouvrir `/login` et saisir le login et le mot de passe d'un compte de la table `users`.
-Les profils possibles sont `AGENT` et `RESPONSABLE_EXPLOITATION`.
-Une erreur d'identification réaffiche le formulaire avec un message ; une connexion réussie ouvre l'accueil.
-Le bouton « Déconnectez-vous » ferme la session et revient à la page de connexion.
+Les comptes sont créés une seule fois en BCrypt ; relancer ne remplace aucun compte, secret ou catalogue existant. Les mots de passe saisis au premier lancement sont ceux des comptes persistés. Un changement ultérieur des variables ne réinitialise pas ces comptes.
 
-Les comptes existants avec un mot de passe en clair sont reconnus et leur mot de passe est remplacé par un hash BCrypt après une connexion réussie.
-Les mots de passe BCrypt, avec ou sans préfixe `{bcrypt}`, sont aussi reconnus.
-Le mécanisme utilise le [PasswordEncoder de Spring Security](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html).
+Le script force les paramètres H2 pour éviter qu'une ancienne variable Supabase/MySQL ne cible une base distante. `.data/`, `.env` et ses variantes sont exclus de Git et du contexte Docker. Un autre port est possible : `scripts/demarrer-demo.ps1 -Port 8081`.
 
-## F2 — Équipements par station
+## Lancement manuel
 
-Après connexion, cliquer sur **Consulter les équipements par station** depuis l'accueil, ou ouvrir `/stations`.
-Choisir une station affiche `/stations/{id}/equipements` avec la référence, le libellé, le type et l'état de fonctionnement de ses seuls équipements.
-Les états sont **En service**, **En panne** et **En maintenance**, affichés en toutes lettres et distingués par couleur.
-Les profils `AGENT` et `RESPONSABLE_EXPLOITATION` ont accès en lecture, avec contrôle des rôles côté serveur.
-Une station vide affiche un message explicite ; une station inexistante renvoie une page 404.
-
-JPA crée les tables `station` et `equipement` au démarrage (`ddl-auto=update`).
-La référence d'un équipement est unique dans tout le catalogue (RG9) et chaque équipement est lié à une station obligatoire.
-
-Pour initialiser un catalogue de démonstration vide, ajouter le profil `demo` au profil de base :
+Définir les deux variables `RAILPULSE_DEMO_AGENT_PASSWORD` et `RAILPULSE_DEMO_RESPONSABLE_PASSWORD` dans l'environnement, puis :
 
 ```powershell
-.\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=mysql,demo'
-# Ou avec la connexion Supabase configurée :
-.\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=supabase,demo'
+.\mvnw.cmd -B -ntp package
+java -jar target/railpulse-0.0.1-SNAPSHOT.jar --spring.profiles.active=demo-local,demo
 ```
 
-Le profil `demo` crée trois stations et cinq équipements couvrant cinq types et les trois états ; une station reste sans équipement pour montrer ce cas.
-L'initialisation est atomique et ne s'exécute que si les deux tables sont vides. Les relancements ne dupliquent ni ne remplacent le catalogue existant.
-Sans le profil `demo`, aucune donnée métier n'est ajoutée automatiquement. Les utilisateurs de F1 sont conservés ; aucun compte ni mot de passe n'est créé par F2.
-Les fonctionnalités F7 à F12 restent à réaliser.
+Pour le lancement manuel, vérifier qu'aucune variable `SPRING_DATASOURCE_*` héritée ne remplace le profil local. Dans IntelliJ : importer le projet Maven, sélectionner Java 21 et lancer `RailPulseApplication` avec `demo-local,demo` et les deux secrets de démonstration.
 
-Le développement F2 est isolé dans `feature/f2-equipements-par-station`. Les fonctionnalités suivantes pourront suivre le même nommage `feature/fN-description`, en partant de `master` après intégration de leurs dépendances.
+Pour Supabase : profil `supabase` (ou `supabase,render` sur Render), paramètres décrits dans [docs/supabase.md](docs/supabase.md). Ajouter `demo` et ses deux secrets si l'on souhaite créer les comptes de démonstration et initialiser un catalogue vide. Le profil `mysql` reste disponible ; son mot de passe doit être fourni par `MYSQL_DB_PASSWORD` ou `SPRING_DATASOURCE_PASSWORD`, sans valeur de secours versionnée.
 
-## F3 — Fiche d'un équipement
+## Parcours F1 à F6
 
-Cliquer sur la référence d'un équipement dans la liste F2 ouvre `/equipements/{id}`.
-La fiche présente sa référence, son libellé, sa station, son type, son état de fonctionnement et tous ses incidents, en cours comme résolus.
-Les incidents sont triés par date d'ouverture décroissante, puis par identifiant décroissant en cas d'égalité (RG7).
-Chaque ligne affiche la description, l'ouverture, le statut, le prestataire éventuel et la résolution éventuelle. Les horaires sont affichés en UTC.
-Les deux profils ont accès en lecture ; une fiche absente renvoie 404 et une fiche sans incident affiche un message explicite.
+1. **F1** : connexion des deux profils, erreur générique en cas d'échec, bandeau utilisateur et déconnexion POST avec fermeture de session.
+2. **F2** : `/stations`, choix de station, type et état de ses seuls équipements ; référence unique en base (RG9).
+3. **F3** : cliquer sur une référence pour ouvrir `/equipements/{id}` et consulter ses incidents en cours/passés, triés par ouverture décroissante (RG7).
+4. **F4** : déclarer un incident depuis la fiche ; description obligatoire, 2000 caractères maximum, ouverture UTC côté serveur, statut non affecté sans prestataire (RG1/RG2).
+5. **F5** : cliquer sur le numéro d'incident ; description, équipement, station, durée, dates, prestataire et évaluation éventuels. La durée s'arrête à la résolution.
+6. **F6** : le responsable corrige uniquement la description d'un incident actif ; l'agent consulte. Un résolu n'est plus modifiable (409). Droits HTTP et service, CSRF et contrôle des champs envoyés.
 
-Sur un catalogue vide, le profil `demo` ajoute aussi un prestataire et cinq incidents non affectés, affectés ou résolus, avec des dates relatives à une horloge UTC : notamment 47 h, 48 h et 72 h.
-Un catalogue déjà renseigné est conservé ; activer `demo` ne réinjecte pas ces données sur une base F2 existante.
-Le modèle contient les transitions nécessaires à ces données cohérentes ; les écrans d'affectation/résolution (F7/F8) restent à réaliser.
+Les erreurs conservent la saisie sans écriture ; identifiant mal formé 400, ressource absente 404, accès interdit 403. Les horaires sont en UTC. Le profil `demo` crée des incidents aux dates relatives, dont 47/48/72 h, ainsi que des cas affectés/résolus. Les couleurs actuelles représentent des statuts, pas encore les indicateurs d'urgence F11.
 
-Branche F3 : `feature/f3-fiche-equipement`.
+## Deux fonctionnalités alpha
 
-## F4 — Déclarer un incident
+- **Qualité renforcée (piste 7)** : tests HTTP/JPA et métier, H2 et PostgreSQL isolés dans la CI, horloge injectée, JaCoCo et vérification des refus sans mutation.
+- **Export de données (piste 9)** : bouton **Exporter le catalogue (CSV)** sur F2, ou `/stations/export.csv`. Export UTF-8 compatible tableur, tri par station/référence, champs échappés et formules neutralisées. Les deux profils peuvent exporter ; une connexion est requise. L'export utilise l'unique requête SQL native de l'application, analysée dans le journal.
 
-Depuis la fiche d'un équipement, cliquer sur **Déclarer un incident**, saisir une description puis valider.
-Les deux profils disposent de cette action. La description est obligatoire, non blanche et limitée à 2000 caractères côté navigateur et côté serveur.
-Une saisie invalide conserve le formulaire et les valeurs, affiche un message français et n'écrit rien en base.
+## Sécurité des comptes existants
 
-Le POST `/equipements/{id}/incidents` utilise uniquement la description : l'équipement vient de l'URL, l'ouverture est calculée par l'horloge UTC du serveur, le statut initial est **Non affecté**, sans prestataire ni date de résolution (RG1/RG2).
-Une réussite redirige vers la fiche avec un message de confirmation et le nouvel incident dans la liste ; rafraîchir cette fiche ne répète pas la déclaration.
-La connexion et un jeton CSRF sont requis. Les identifiants, dates, statuts et prestataires ajoutés artificiellement au formulaire ne sont pas liés au modèle.
+La connexion accepte uniquement BCrypt, avec ou sans préfixe `{bcrypt}`. Toute nouvelle écriture JPA d'un compte impose un mot de passe déjà haché.
+Une migration transactionnelle au démarrage transforme les anciennes valeurs en clair ou `{noop}` en BCrypt, avant l'état prêt de l'application. Elle conserve les mots de passe utilisables, identifiants et profils ; elle est idempotente et ne journalise pas les valeurs. Un format historique inconnu ou vide arrête le démarrage avec un message de réinitialisation, au lieu d'être interprété comme du clair.
 
-La déclaration ne change pas automatiquement l'état de fonctionnement du catalogue : un signalement peut décrire une anomalie sans arrêt complet. Plusieurs incidents d'un même équipement restent possibles ; le sujet ne prescrit pas de restriction supplémentaire.
-Branche F4 : `feature/f4-declaration-incident`, basée sur F3. F3 est intégrée en premier ; la PR F4 vise `master` et contient uniquement la déclaration d'incident.
+Le `.env` n'est pas chargé automatiquement par Spring. Le script local ne lit que les secrets de démonstration ; Render importe les valeurs via **Environment à Add from .env**. Le modèle versionné [.env.example](.env.example) ne contient aucun secret.
 
-## F5 — Détail d'un incident
-
-Dans la fiche équipement, cliquer sur le numéro d'un incident ouvre `/incidents/{id}`.
-Les deux profils peuvent consulter sa description, son équipement, sa station, ses dates, son statut, sa durée d'ouverture et son prestataire éventuel (nom/contact).
-La durée est recalculée avec l'horloge UTC pour un incident actif ; pour un incident résolu, elle s'arrête à la résolution et ne continue pas d'augmenter.
-Une évaluation existante apparaît avec note, commentaire éventuel et date. En l'absence de prestataire ou d'évaluation, un message explicite est affiché.
-
-Le modèle d'évaluation respecte RG8 : incident résolu avec prestataire, note entière de 1 à 5, une seule évaluation par incident. Sa saisie par l'interface relève de F10 et reste à réaliser.
-Sur un catalogue de démonstration neuf, le profil `demo` ajoute une évaluation à l'incident résolu. Les données d'un catalogue existant sont conservées.
-Les ressources absentes renvoient 404, les identifiants mal formés 400 et les visiteurs sont redirigés vers la connexion.
-Branche F5 : `feature/f5-detail-incident`, avec PR vers `master`.
-
-## F6 — Modifier les informations autorisées
-
-Le responsable d'exploitation peut ouvrir **Modifier la description** depuis le détail d'un incident actif, puis corriger sa description.
-L'agent garde un accès en lecture : le formulaire et la modification sont aussi interdits côté serveur, même en fabriquant une requête HTTP.
-Les incidents résolus ne sont plus modifiables afin de préserver l'historique ; une tentative renvoie 409, y compris si la résolution intervient après l'ouverture du formulaire.
-
-La description reste obligatoire et limitée à 2000 caractères. Les erreurs conservent les valeurs saisies sans modifier la base. La création et la modification utilisent les mêmes contraintes et le même fragment de formulaire.
-L'équipement, l'identifiant, les dates, le statut, le prestataire et l'évaluation sont conservés. F7/F8 auront leurs propres opérations pour les transitions d'état.
-Une réussite redirige vers le détail avec un message de confirmation. L'annulation revient à ce détail sans écriture.
-
-Les droits sont vérifiés dans les routes et dans le service (`@PreAuthorize`). Une transaction d'écriture verrouille et relit l'incident avant de vérifier son état, puis ne modifie que la description.
-Branche F6 : `feature/f6-modification-incident`, basée sur F5. Sa PR vise F5 pour isoler les changements ; intégrer F5 en premier puis recibler F6 sur `master`.
-
-Les fichiers `.env` et `.env.*` sont ignorés par Git, y compris dans les sous-dossiers. Seuls les exemples sans secrets, comme `.env.example`, peuvent être versionnés.
-
-## Qualité et tests
+## Tests et CI
 
 ```powershell
-$env:JAVA_HOME = 'C:\chemin\vers\jdk-21'
-.\mvnw.cmd verify
+.\mvnw.cmd -B -ntp verify
 ```
 
-Cette commande compile, exécute les tests isolés sur H2, construit le JAR et produit le rapport de couverture dans `target/site/jacoco/index.html`.
-Les formulaires de programmeurs sont validés côté serveur : noms obligatoires, longueurs limitées et salaire facultatif non négatif.
-Les erreurs de saisie conservent les valeurs du formulaire ; les erreurs HTTP utilisent une page commune sans détails techniques.
+Les tests locaux utilisent des bases H2 temporaires. `verify` produit le JAR, `target/site/jacoco/index.html` et les rapports dans `target/surefire-reports/`.
+La CI exécute les mêmes tests sous Java 21 avec H2 et un vrai PostgreSQL temporaire, dans des schémas séparés par contexte de test. Aucune connexion Supabase n'est requise. Ne pas renseigner une base contenant des données à conserver dans `TEST_DB_URL` : les tests utilisent `create-drop`.
 
-Le [journal du projet](journal.md) explique SOLID, les droits par profil, l'état du lot alpha, les règles, les tests et les limites de la vérification.
-Les [notes du TP initial](docs/journal-tp5.md) sont archivées séparément.
+Le CRUD de programmeurs reste un exemple isolé du TP ; il n'est pas compté comme fonctionnalité Rail Pulse. Son repository contient une requête dérivée réellement utilisée pour le tri de la liste.
 
-## Déploiement Render
+## Déploiement et limites
 
-Créer un **Web Service** avec **Language = Docker** et suivre le [guide Render](docs/render.md) pour les champs et les variables Supabase.
-Le `Dockerfile` exécute `mvn verify` sous Java 21 avant de construire l'image d'exécution. Le profil `render` configure le port fourni par l'hébergeur et les sessions HTTPS.
-La branche `feature/deploiement-render` contient cette configuration et F2. Les identifiants de base se renseignent dans les variables d'environnement de Render.
+Application : https://railpulse-23pc.onrender.com à [procédure Render](docs/render.md).
+Le Dockerfile construit et teste avec Java 21. Les variables de base et de démonstration doivent être configurées sur Render avant d'y déployer les correctifs. Le déploiement peut attendre les deux jobs CI via **Auto-Deploy à After CI Checks Pass**.
+
+F7 à F12 restent à réaliser : affectation, résolution, historique global, saisie d'évaluation, supervision/urgence et API REST OpenAPI. Le détail peut déjà afficher une évaluation initialisée, sans interface F10. `ddl-auto=update` et l'initialisation applicative conviennent au projet pédagogique ; des migrations de schéma versionnées restent une amélioration pour une exploitation durable.

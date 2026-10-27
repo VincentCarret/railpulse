@@ -34,7 +34,8 @@ class RailPulseApplicationTests extends WebIntegrationTestSupport {
 
     @Test
     void invalidCredentialsRedisplayLoginWithAnErrorWithoutOpeningASession() throws Exception {
-        User user = createUser(Profil.AGENT, PASSWORD);
+        String encoded = passwords.encode(PASSWORD);
+        User user = createUser(Profil.AGENT, encoded);
         try (HttpClient client = browser()) {
             for (String login : List.of(user.getLogin(), "inconnu")) {
                 HttpResponse<String> result = login(client, login, "incorrect");
@@ -44,14 +45,14 @@ class RailPulseApplicationTests extends WebIntegrationTestSupport {
                 assertTrue(page.body().contains("Identifiant ou mot de passe incorrect"));
                 assertRedirect(get(client, "/"), "/login");
             }
-            assertEquals(PASSWORD, users.findById(user.getId()).orElseThrow().getPassword());
+            assertEquals(encoded, users.findById(user.getId()).orElseThrow().getPassword());
         }
     }
 
     @Test
-    void bothProfilesCanLoginAndLegacyPasswordsAreUpgradedAfterSuccess() throws Exception {
+    void bothProfilesCanLoginWithBcryptAndTheSessionIsRenewed() throws Exception {
         for (Profil profil : Profil.values()) {
-            User user = createUser(profil, PASSWORD);
+            User user = createUser(profil, passwords.encode(PASSWORD));
             try (HttpClient client = browser()) {
                 get(client, "/login");
                 String oldSession = sessionId(client);

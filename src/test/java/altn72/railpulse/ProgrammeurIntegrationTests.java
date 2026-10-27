@@ -13,6 +13,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ProgrammeurIntegrationTests extends WebIntegrationTestSupport {
     @Test
+    void laListeDuTpEstTrieeParNomPuisPrenom() {
+        createProgrammeur("Zola", "Zoé");
+        createProgrammeur("Martin", "Zoé");
+        createProgrammeur("Martin", "Anne");
+        assertEquals(List.of("Martin Anne", "Martin Zoé", "Zola Zoé"), programmeurService.getProgrammeurs().stream()
+                .map(programmeur -> programmeur.getNom() + " " + programmeur.getPrenom()).toList());
+    }
+
+    @Test
     void crudPersistsChangesAndShowsSuccessMessagesWithoutTrustingSubmittedIds() throws Exception {
         Programmeur protectedRecord = createProgrammeur("À conserver", "Exemple");
         try (HttpClient client = authenticatedBrowser()) {
