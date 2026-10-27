@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Équipements par station · Rail Pulse</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="container page-content">
+    <nav aria-label="Fil d’Ariane" class="mb-4"><a th:href="@{/}">Accueil</a> / Équipements par station</nav>
+    <p class="section-label">LE RÉSEAU</p>
+    <h1>Équipements par station</h1>
+    <p class="text-secondary">Choisissez une station pour consulter ses équipements et leur état de fonctionnement.</p>
+
+    <nav aria-label="Choisir une station" class="station-list my-4" th:unless="${#lists.isEmpty(stations)}">
+        <a th:each="station : ${stations}" class="btn btn-outline-success"
+           th:href="@{/stations/{id}/equipements(id=${station.id})}"
+           th:attr="aria-current=${stationSelectionnee != null and stationSelectionnee.id == station.id ? 'page' : null}"
+           th:classappend="${stationSelectionnee != null and stationSelectionnee.id == station.id ? 'active' : ''}"
+           th:text="${station.nom}"></a>
+    </nav>
+    <p class="alert alert-info" role="status" th:if="${#lists.isEmpty(stations)}">Aucune station enregistrée pour le moment.</p>
+    <p th:if="${stationSelectionnee == null and !#lists.isEmpty(stations)}" class="text-secondary">Sélectionnez une station pour afficher ses équipements.</p>
+
+    <section th:if="${stationSelectionnee != null}" aria-labelledby="station-titre">
+        <h2 id="station-titre" class="h4" th:text="${stationSelectionnee.nom}"></h2>
+        <p class="text-secondary" th:text="|${#lists.size(equipements)} équipement(s)|"></p>
+        <p class="alert alert-info" role="status" th:if="${#lists.isEmpty(equipements)}">Aucun équipement enregistré dans cette station.</p>
+        <div th:unless="${#lists.isEmpty(equipements)}" class="table-responsive table-card" tabindex="0"
+             aria-label="Équipements de la station, défilement horizontal possible">
+            <table class="table table-hover align-middle mb-0">
+                <caption class="visually-hidden" th:text="|Équipements de ${stationSelectionnee.nom}, avec leur type et leur état de fonctionnement.|"></caption>
+                <thead><tr><th scope="col">Référence</th><th scope="col">Équipement</th><th scope="col">Type</th><th scope="col">État de fonctionnement</th></tr></thead>
+                <tbody>
+                <tr th:each="equipement : ${equipements}">
+                    <td th:text="${equipement.reference}"></td>
+                    <td th:text="${equipement.libelle}"></td>
+                    <td th:text="${equipement.type.libelle}"></td>
+                    <td><span class="equipment-state" th:attr="data-etat=${equipement.etatFonctionnement}"
+                              th:text="${equipement.etatFonctionnement.libelle}"></span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

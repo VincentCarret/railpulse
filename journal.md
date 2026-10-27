@@ -1,14 +1,17 @@
 # Journal de développement — Rail Pulse
 
-## Périmètre et règles retenues
+## README — Périmètre et règles retenues
 
 Ce journal décrit le code effectivement réalisé, ses vérifications et ses limites.
 Le projet utilise Java 21, Spring Boot, Spring MVC, Thymeleaf, Spring Data JPA et PostgreSQL/Supabase. Le profil MySQL local reste disponible pour compatibilité.
 Les explications du corrigé initial sont conservées dans [les notes du TP 5](docs/journal-tp5.md).
 
-Les exigences détaillées disponibles portent sur la connexion/déconnexion et la grille d'évaluation.
+Le sujet de référence est **ALTN72 — Projet final 2026-27**, notamment §5.2 (F2), §5.6 (droits), RG9, RG11 et §7 (architecture, persistance, tests).
+F1 (connexion/déconnexion) et F2 (consultation des équipements par station) sont réalisées.
 Le CRUD de programmeurs provient du TP et sert de support aux formulaires, transactions et tests.
-Aucune règle supplémentaire sur des équipements ou incidents ferroviaires n'a été fournie : ces fonctionnalités ne sont pas déclarées réalisées.
+Les fonctionnalités F3 à F12 ne sont pas encore réalisées ; elles ne sont pas incluses dans la branche F2.
+Les instructions de configuration, de lancement et d'initialisation F2 sont dans le [README](README.md#f2--équipements-par-station).
+L'URL déployée, les comptes de démonstration et les noms du groupe restent à renseigner avant le rendu.
 
 | Règle | Mise en œuvre et justification |
 |---|---|
@@ -16,7 +19,10 @@ Aucune règle supplémentaire sur des équipements ou incidents ferroviaires n'a
 | Erreur d'identification | Retour au même formulaire, message générique ne révélant pas si le compte existe. |
 | Utilisateur connecté | Prénom, profil et formulaire de déconnexion dans le bandeau commun. |
 | Déconnexion | POST protégé par CSRF, invalidation de la session, suppression du cookie, retour à `/login`. |
-| Profils | `AGENT` et `RESPONSABLE_EXPLOITATION`. Aucune différence de droits inventée en l'absence d'exigence. |
+| Profils | `AGENT` et `RESPONSABLE_EXPLOITATION`. F2 autorisée en lecture pour les deux, avec contrôle des rôles côté serveur. |
+| Catalogue F2 | Choisir une station et retrouver uniquement ses équipements avec référence, libellé, type et état. |
+| RG9 | Contrainte unique en base sur la référence d'équipement, commune à toutes les stations. |
+| Station absente / vide | Page 404 avec message français / page 200 avec état vide explicite. |
 | Nom et prénom des programmeurs | Obligatoires, non blancs, 100 caractères maximum, en cohérence avec les colonnes existantes. |
 | Autres champs textuels | Facultatifs ; adresse limitée à 255 caractères, langage à 100, livre à 150, conformément au schéma. |
 | Salaire | Facultatif, fini et positif ou nul. Le refus des valeurs négatives est une hypothèse explicite du projet, à confirmer si le sujet évolue. Aucune devise ou périodicité n'est supposée. |
@@ -26,7 +32,7 @@ Aucune règle supplémentaire sur des équipements ou incidents ferroviaires n'a
 | Saisie invalide | Le formulaire conserve les valeurs saisies et affiche les erreurs ; la base reste inchangée. |
 | Liste vide | État vide explicite et lien pour créer le premier programmeur. |
 
-## Architecture et points du cours
+## ARCHITECTURE
 
 ### Vue d'ensemble
 
@@ -45,11 +51,15 @@ Le contrôleur ne contient ni requête SQL ni règle de validation métier compl
 
 ### Responsabilités des couches
 
-- Présentation : `ProgrammeurControleur` reçoit les requêtes, valide les formulaires et prépare le modèle. Les templates Thymeleaf affichent les données ; les fragments partagent le bandeau et les champs communs.
+- Présentation : `EquipementControleur` expose `/stations` et `/stations/{stationId}/equipements` ; `ProgrammeurControleur` conserve le CRUD du TP. Les templates Thymeleaf affichent les données ; les fragments partagent le bandeau et les champs communs.
 - Sécurité : `SecurityConfig` protège les routes privées, gère `/login`, la déconnexion POST et CSRF. `AuthService` adapte les utilisateurs au contrat Spring Security et compare les mots de passe BCrypt.
-- Application : `ProgrammeurService` orchestre les cas d'utilisation CRUD, vérifie l'existence des ressources et délimite les transactions.
-- Domaine : `Programmeur`, `User` et `Profil` décrivent les données et leurs contraintes métier.
-- Persistance : `ProgrammeurRepository` et `UserRepository` sont des interfaces Spring Data JPA. Le profil `supabase` utilise PostgreSQL dans le schéma `railpulse`, tandis que `mysql` conserve la base locale.
+- Application : `EquipementService` vérifie l'existence d'une station et fournit ses équipements ; `ProgrammeurService` conserve les opérations du TP.
+- Domaine : `Station`, `Equipement`, `TypeEquipement` et `EtatFonctionnement` décrivent le catalogue ; `Programmeur`, `User` et `Profil` restent disponibles.
+- Persistance : `StationRepository` et `EquipementRepository` complètent les repositories existants. Le profil `supabase` utilise PostgreSQL dans le schéma `railpulse`, tandis que `mysql` conserve la base locale.
+
+Dépôt : https://github.com/VincentCarret/railpulse
+
+Flux F2 : navigateur → `EquipementControleur` → `EquipementService` → repositories → tables `station` / `equipement`, puis rendu `equipements.html`. La relation équipement/station est obligatoire et chargée à la demande ; la page n'accède pas à une relation non chargée.
 
 ### Flux de connexion
 
@@ -82,12 +92,43 @@ Les champs HTML sont partagés dans un fragment unique, et le bandeau utilisateu
 Les logs utilisent SLF4J ; les messages techniques ne sont pas montrés à l'utilisateur.
 Les tests d'authentification et de CRUD sont séparés et partagent un support HTTP de test, sans héritage métier artificiel.
 
-## SOLID : principes appliqués et limites justifiées
+## CHOIX TECHNIQUES
+
+### Droits par profil (§5.6)
+
+Les droits des fonctionnalités futures sont la répartition retenue pour la suite ; seuls F1 et F2 sont implémentés aujourd'hui.
+
+| N° | Fonctionnalité | AGENT | RESPONSABLE_EXPLOITATION |
+|---|---|---|---|
+| F2–F3 | Consulter équipements et fiches | Lecture seule | Lecture seule |
+| F4 | Déclarer un incident | Accès complet | Accès complet |
+| F5–F6 | Consulter / modifier un incident | Lecture seule | Accès complet |
+| F7 | Affecter ou réaffecter un prestataire | Interdit | Accès complet |
+| F8 | Déclarer un incident résolu | Interdit | Accès complet |
+| F9 | Consulter l'historique | Lecture seule | Lecture seule |
+| F10 | Évaluer un prestataire | Interdit | Accès complet |
+| F11 | Tableau de bord | Interdit | Lecture seule |
+
+Le responsable pilote les affectations, la résolution et l'évaluation ; l'agent signale les pannes et consulte le suivi.
+F6 sera limitée à la description d'un incident encore actif ; les transitions d'état auront leurs opérations dédiées (F7/F8).
+`SecurityConfig` exige l'un des deux rôles pour les GET `/stations` et `/stations/**` (RG11). Aucun endpoint d'écriture du catalogue n'est exposé par F2.
+
+### Exceptions, requêtes et transactions F2
+
+- `StationIntrouvableException` porte un message français et `GlobalExceptionHandler` le traduit en page 404. Le même `@ControllerAdvice` conserve l'homogénéité des erreurs du projet et masque les détails techniques. Un identifiant mal formé renvoie 400.
+- `StationRepository.findAllByOrderByNomAscIdAsc` est une requête dérivée ; `EquipementRepository.rechercherParStation` est une requête JPQL explicite. Le filtrage par station et le tri par référence sont effectués en base.
+- Aucune requête native n'est ajoutée artificiellement pour F2. L'unique requête SQL native exigée au §7.6 reste à réaliser et à analyser dans une prochaine fonctionnalité adaptée.
+- `EquipementService` utilise `@Transactional(readOnly = true)` pour regrouper les lectures de station et d'équipements dans une transaction sans écriture.
+- `DonneesDemonstration.run` utilise une transaction d'écriture : stations et équipements de démonstration sont créés ensemble ou annulés ensemble (RG10). Le profil `demo` est explicite et ignore un catalogue déjà renseigné.
+- Les enums sont persistées par leur nom, pour éviter qu'un réordonnancement change le sens des valeurs stockées. Les états de fonctionnement de F2 sont distincts des futurs indicateurs d'urgence des incidents (RG3/RG4).
+
+### SOLID : principes appliqués et limites justifiées
 
 ### SRP — responsabilité unique : appliqué
 
 `ProgrammeurControleur` peut changer si le parcours HTTP évolue ; `ProgrammeurService` si les opérations applicatives évoluent ; `ProgrammeurRepository` si les besoins d'accès aux données évoluent.
 `GlobalExceptionHandler` centralise la traduction des exceptions en pages et statuts HTTP.
+Le même découpage s'applique à F2 : contrôleur HTTP, service de consultation, repositories de catalogue et initialisation de démonstration séparés.
 Les vues ne réalisent aucune requête SQL. Les services ne choisissent aucun template HTML.
 Ces responsabilités ont des raisons de changement différentes et restent séparées.
 
@@ -119,9 +160,9 @@ Spring Security sépare notamment la lecture d'un compte et la mise à jour de s
 Ajouter des wrappers reproduisant chaque méthode de `JpaRepository` n'apporterait pas de valeur dans ce petit périmètre.
 Un découpage supplémentaire deviendrait pertinent si des consommateurs avaient des besoins nettement différents.
 
-## Fonctionnalités transverses réalisées
+## LOT ALPHA
 
-### 1. Sécurité et contexte de session
+### Socle F1 : sécurité et contexte de session
 
 - Contrôle d'accès commun aux routes privées, indépendamment du contrôleur.
 - Connexion par formulaire, message d'échec, session HTTP et déconnexion.
@@ -130,9 +171,9 @@ Un découpage supplémentaire deviendrait pertinent si des consommateurs avaient
 - Bandeau partagé via un fragment et un `ControllerAdvice`.
 - BCrypt pour les mots de passe ; migration des anciens mots de passe en clair seulement après une identification réussie.
 
-Cette fonctionnalité traverse les contrôleurs et les pages. La protection CSRF n'est pas comptée comme une deuxième fonctionnalité séparée de la sécurité.
+Ces mécanismes répondent au socle F1 et à la sécurité §7.7 ; ils ne comptent pas comme une fonctionnalité alpha supplémentaire.
 
-### 2. Validation et gestion homogène des erreurs
+### Piste 7 : qualité renforcée — travail engagé
 
 - Contraintes Jakarta Validation sur les données ; validation au niveau des formulaires et du service.
 - Messages français par champ, réaffichage de la saisie et absence d'écriture en cas d'erreur.
@@ -142,7 +183,12 @@ Cette fonctionnalité traverse les contrôleurs et les pages. La protection CSRF
 - Masquage des détails SQL, messages internes et traces techniques dans les réponses.
 
 La validation ne dépend pas du seul JavaScript du navigateur ; elle reste active pour une requête HTTP fabriquée manuellement.
-Le regroupement validation/erreurs constitue ici la deuxième fonctionnalité transverse retenue, en l'absence d'une liste plus précise fournie par le sujet.
+Les tests d'intégration HTTP/JPA, JaCoCo et l'intégration continue existante contribuent à la piste 7 du sujet. F2 ajoute les tests du catalogue, du filtrage, des cas vides, de RG9 et de l'initialisation de démonstration.
+La validation et les exceptions font aussi partie du socle technique : leur seule présence ne suffit pas à démontrer deux fonctionnalités alpha.
+
+### Deuxième fonctionnalité transverse — à choisir par le groupe
+
+Le second choix alpha reste à définir parmi les pistes du §6 (ou à faire valider par l'enseignant s'il sort de la liste), puis à réaliser progressivement. Cette branche porte exclusivement sur F2 et ne prétend pas satisfaire tout le lot alpha.
 
 ### Diagnostic technique complémentaire
 
@@ -159,7 +205,7 @@ Ces logs facilitent le diagnostic ; ce ne sont pas un journal d'audit métier pe
 - Fil d'Ariane, annulation, liste vide explicite et tableau à défilement horizontal.
 - Confirmation avant suppression ; le serveur conserve la protection CSRF même si JavaScript est désactivé.
 
-## Vérification de la solution
+## TESTS
 
 Commande complète : `./mvnw.cmd verify` sous Windows, avec Java 21.
 Les tests HTTP démarrent un vrai serveur sur un port aléatoire et utilisent un cookie de session par client.
@@ -171,6 +217,10 @@ Depuis la préparation Supabase, H2 utilise le mode PostgreSQL. Des variables `T
 | `RailPulseApplicationTests` | Page publique, routes privées, erreurs de connexion, deux profils, formats de mots de passe, migration BCrypt, rotation de session, déconnexion, ancien cookie refusé, CSRF, bandeau et déconnexion depuis chaque page. |
 | `ProgrammeurIntegrationTests` | Création/modification/suppression effectivement persistées, identifiants falsifiés, messages de succès, champs facultatifs, zéro accepté, champs manquants/trop longs, salaire négatif/invalide/non fini, conservation de la saisie et des données, ressource absente, paramètres et méthodes invalides, liste vide, validation du service et CSRF. |
 | `GlobalExceptionHandlerTest` | Messages d'erreur sûrs, conflit de données, statut HTTP conservé et détails internes masqués. |
+| `EquipementIntegrationTests` | Connexion obligatoire, deux profils autorisés, navigation depuis l'accueil, isolation entre stations, tri, types et états, absence de modification lors des lectures, catalogue/station vides, 404/400, échappement HTML et référence unique interstations (RG9). |
+| `DonneesDemonstrationIntegrationTests` | Initialisation effective avec le profil `demo`, diversité des données, station vide, absence de doublons au relancement et absence de création de comptes. |
+
+Vérification F2 du **27/10/2026** : `./mvnw.cmd -B verify` réussie, **28 tests, 0 échec, 0 erreur**, JAR et rapport JaCoCo générés. Compilation ciblant Java 21, exécution sur le JDK 25.0.3 installé sur cette machine. Les huit nouveaux tests tournent sur H2 en mode PostgreSQL ; les bases réelles ne sont pas modifiées par cette vérification. Le rendu visuel et l'exécution de F2 sur MySQL/Supabase restent à contrôler sur l'environnement de démonstration.
 
 Le rapport [JaCoCo](https://www.jacoco.org/jacoco/trunk/doc/maven.html) est généré dans `target/site/jacoco/index.html` par `verify`.
 Vérification du 14/10/2026 : **20 tests réussis**, construction du JAR réussie, **80,8 % des lignes** et **44,2 % des branches** Java couvertes.
@@ -190,19 +240,21 @@ H2 ne remplace pas une vérification sur MySQL. Le démarrage automatique du ser
 | 14/10/2026 | Bandeau commun et déconnexion depuis chaque page | `b416d3a` |
 | 14/10/2026 | Validation, erreurs centralisées, nettoyage, formulaires et tests CRUD | `85c6c74` |
 | 14/10/2026 | Documentation SOLID, bilan d'évaluation et rapport de couverture | Voir le commit correspondant dans `git log`. |
+| 27/10/2026 | F2 : catalogue des équipements par station, RG9/RG11, profil demo et 8 nouveaux tests | Branche `feature/f2-equipements-par-station` |
 
 Les commits attestent les étapes enregistrées, pas un temps de travail ou une répartition entre membres.
 L'assistance Codex a été utilisée pour la mise en œuvre et la vérification. L'autonomie du groupe reste à démontrer par la compréhension du code, la reproduction des tests et l'explication des choix lors de la présentation.
 
 ## Contrôles manuels avant présentation
 
-1. Démarrer sur la machine prévue et vérifier la connexion à MySQL.
+1. Démarrer sur la machine prévue avec le profil de base choisi et, si le catalogue est vide, le profil `demo`.
 2. Se connecter avec un compte de chacun des deux profils.
 3. Vérifier le bandeau, une erreur de saisie, une création, une modification et une suppression.
 4. Vérifier l'annulation de la confirmation de suppression.
 5. Se déconnecter et tenter de rouvrir une page privée.
 6. Examiner les écrans sur mobile et au clavier, ainsi que le chargement du CSS Bootstrap.
 7. Présenter les résultats Maven, le rapport de couverture et les commits.
+8. Depuis l'accueil, ouvrir les équipements, passer d'une station à l'autre, vérifier types/états, station vide, puis accès direct à une station absente.
 
 L'accessibilité complète, les différences H2/MySQL, la charge et la compatibilité de tous les navigateurs ne sont pas certifiées par les seuls tests présents.
 
@@ -219,3 +271,11 @@ L'accessibilité complète, les différences H2/MySQL, la charge et la compatibi
 - Vérification : 20 tests réussis sur H2 en mode PostgreSQL, puis les mêmes 20 tests sur PostgreSQL 18 temporaire avec création du schéma `railpulse`. Le serveur de test a été arrêté après la vérification. Cela valide le dialecte PostgreSQL, pas la connectivité au projet Supabase distant.
 - Diagnostic du lancement IntelliJ : `UnknownHostException` sur l'hôte Supabase direct. Ajout de deux configurations explicites MySQL local / Supabase pour éviter de confondre les environnements. Démarrage du JAR avec le profil MySQL vérifié sur un port temporaire : `/login` répond HTTP 200 ; cette instance de vérification a ensuite été arrêtée.
 - Le lancement habituel sans profil continuait de choisir Supabase : le profil par défaut est finalement rétabli à `mysql`. L'utilisation distante reste explicite via `SPRING_PROFILES_ACTIVE=supabase` ou la configuration IntelliJ dédiée. La documentation CI/CD est alignée sur ce choix.
+
+## BILAN
+
+- État au 27/10/2026 : F1 et F2 réalisées ; le CRUD de programmeurs reste un support issu du TP. F3 à F12 restent à développer sur des branches dédiées.
+- Point de conception F2 : distinguer une station absente (404) d'une station existante sans équipement (200), et effectuer le filtrage en base pour éviter de mélanger les stations.
+- Trois points à retenir : séparer HTTP/métier/persistance ; garantir les invariants en base et les droits côté serveur ; tester les comportements attendus avec de vraies requêtes HTTP et une base isolée.
+- Avant rendu : compléter la contribution de chaque membre et la difficulté principale du groupe, le second choix alpha, l'unique requête native et son analyse, les comptes de test et l'URL déployée. La migration des anciens mots de passe en clair de F1 reste une compatibilité historique ; les comptes de démonstration finaux doivent déjà être hachés.
+- La configuration courante utilise `supabase` par défaut (les notes du 14/10 ci-dessus décrivent l'historique). Les secrets éventuels des profils existants doivent rester hors du dépôt conformément au §7.7 ; cette branche F2 n'en ajoute aucun.
