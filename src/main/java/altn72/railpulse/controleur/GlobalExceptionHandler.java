@@ -2,6 +2,8 @@ package altn72.railpulse.controleur;
 
 import altn72.railpulse.service.exception.ProgrammeurIntrouvableException;
 import altn72.railpulse.service.exception.StationIntrouvableException;
+import altn72.railpulse.service.exception.EquipementIntrouvableException;
+import altn72.railpulse.service.exception.EtatIncidentInvalideException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,18 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String stationIntrouvable(StationIntrouvableException exception, Model model) {
         return erreur(model, 404, exception.getMessage());
+    }
+
+    @ExceptionHandler(EquipementIntrouvableException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String equipementIntrouvable(EquipementIntrouvableException exception, Model model) {
+        return erreur(model, 404, exception.getMessage());
+    }
+
+    @ExceptionHandler(EtatIncidentInvalideException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public String etatIncidentInvalide(EtatIncidentInvalideException exception, Model model) {
+        return erreur(model, 409, exception.getMessage());
     }
 
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, ConstraintViolationException.class})

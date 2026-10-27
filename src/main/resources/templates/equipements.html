@@ -36,7 +36,8 @@
                 <thead><tr><th scope="col">Référence</th><th scope="col">Équipement</th><th scope="col">Type</th><th scope="col">État de fonctionnement</th></tr></thead>
                 <tbody>
                 <tr th:each="equipement : ${equipements}">
-                    <td th:text="${equipement.reference}"></td>
+                    <td><a th:href="@{/equipements/{id}(id=${equipement.id})}" th:text="${equipement.reference}"
+                           th:attr="aria-label=|Consulter la fiche de ${equipement.reference}|"></a></td>
                     <td th:text="${equipement.libelle}"></td>
                     <td th:text="${equipement.type.libelle}"></td>
                     <td><span class="equipment-state" th:attr="data-etat=${equipement.etatFonctionnement}"

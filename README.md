@@ -57,9 +57,23 @@ Pour initialiser un catalogue de démonstration vide, ajouter le profil `demo` a
 Le profil `demo` crée trois stations et cinq équipements couvrant cinq types et les trois états ; une station reste sans équipement pour montrer ce cas.
 L'initialisation est atomique et ne s'exécute que si les deux tables sont vides. Les relancements ne dupliquent ni ne remplacent le catalogue existant.
 Sans le profil `demo`, aucune donnée métier n'est ajoutée automatiquement. Les utilisateurs de F1 sont conservés ; aucun compte ni mot de passe n'est créé par F2.
-La fiche équipement et les incidents seront réalisés dans les fonctionnalités suivantes (F3 à F12).
+Les fonctionnalités F4 à F12 restent à réaliser.
 
 Le développement F2 est isolé dans `feature/f2-equipements-par-station`. Les fonctionnalités suivantes pourront suivre le même nommage `feature/fN-description`, en partant de `master` après intégration de leurs dépendances.
+
+## F3 — Fiche d'un équipement
+
+Cliquer sur la référence d'un équipement dans la liste F2 ouvre `/equipements/{id}`.
+La fiche présente sa référence, son libellé, sa station, son type, son état de fonctionnement et tous ses incidents, en cours comme résolus.
+Les incidents sont triés par date d'ouverture décroissante, puis par identifiant décroissant en cas d'égalité (RG7).
+Chaque ligne affiche la description, l'ouverture, le statut, le prestataire éventuel et la résolution éventuelle. Les horaires sont affichés en UTC.
+Les deux profils ont accès en lecture ; une fiche absente renvoie 404 et une fiche sans incident affiche un message explicite.
+
+Sur un catalogue vide, le profil `demo` ajoute aussi un prestataire et cinq incidents non affectés, affectés ou résolus, avec des dates relatives à une horloge UTC : notamment 47 h, 48 h et 72 h.
+Un catalogue déjà renseigné est conservé ; activer `demo` ne réinjecte pas ces données sur une base F2 existante.
+Le modèle contient les transitions nécessaires à ces données cohérentes ; les écrans d'affectation/résolution (F7/F8) et le détail d'incident (F5) restent à réaliser.
+
+Branche F3 : `feature/f3-fiche-equipement`.
 
 ## Qualité et tests
 

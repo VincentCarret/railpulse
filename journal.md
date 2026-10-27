@@ -7,9 +7,9 @@ Le projet utilise Java 21, Spring Boot, Spring MVC, Thymeleaf, Spring Data JPA e
 Les explications du corrigé initial sont conservées dans [les notes du TP 5](docs/journal-tp5.md).
 
 Le sujet de référence est **ALTN72 — Projet final 2026-27**, notamment §5.2 (F2), §5.6 (droits), RG9, RG11 et §7 (architecture, persistance, tests).
-F1 (connexion/déconnexion) et F2 (consultation des équipements par station) sont réalisées.
+F1 (connexion/déconnexion), F2 (consultation des équipements par station) et F3 (fiche équipement et liste de ses incidents) sont réalisées.
 Le CRUD de programmeurs provient du TP et sert de support aux formulaires, transactions et tests.
-Les fonctionnalités F3 à F12 ne sont pas encore réalisées ; elles ne sont pas incluses dans la branche F2.
+Les fonctionnalités F4 à F12 ne sont pas encore réalisées.
 Les instructions de configuration, de lancement et d'initialisation F2 sont dans le [README](README.md#f2--équipements-par-station).
 L'URL déployée, les comptes de démonstration et les noms du groupe restent à renseigner avant le rendu.
 
@@ -96,7 +96,7 @@ Les tests d'authentification et de CRUD sont séparés et partagent un support H
 
 ### Droits par profil (§5.6)
 
-Les droits des fonctionnalités futures sont la répartition retenue pour la suite ; seuls F1 et F2 sont implémentés aujourd'hui.
+Les droits des fonctionnalités futures sont la répartition retenue pour la suite ; F1 à F3 sont implémentées aujourd'hui.
 
 | N° | Fonctionnalité | AGENT | RESPONSABLE_EXPLOITATION |
 |---|---|---|---|
@@ -274,7 +274,7 @@ L'accessibilité complète, les différences H2/MySQL, la charge et la compatibi
 
 ## BILAN
 
-- État au 27/10/2026 : F1 et F2 réalisées ; le CRUD de programmeurs reste un support issu du TP. F3 à F12 restent à développer sur des branches dédiées.
+- État au 27/10/2026 : F1 à F3 réalisées ; le CRUD de programmeurs reste un support issu du TP. F4 à F12 restent à développer sur des branches dédiées.
 - Point de conception F2 : distinguer une station absente (404) d'une station existante sans équipement (200), et effectuer le filtrage en base pour éviter de mélanger les stations.
 - Trois points à retenir : séparer HTTP/métier/persistance ; garantir les invariants en base et les droits côté serveur ; tester les comportements attendus avec de vraies requêtes HTTP et une base isolée.
 - Avant rendu : compléter la contribution de chaque membre et la difficulté principale du groupe, le second choix alpha, l'unique requête native et son analyse, les comptes de test et l'URL déployée. La migration des anciens mots de passe en clair de F1 reste une compatibilité historique ; les comptes de démonstration finaux doivent déjà être hachés.
@@ -289,3 +289,16 @@ L'accessibilité complète, les différences H2/MySQL, la charge et la compatibi
 - Paramètres de création du Web Service et procédure de contrôle : [docs/render.md](docs/render.md).
 - Docker n'est pas installé sur cette machine : la construction de l'image et le démarrage sur Render restent à vérifier lors du déploiement. L'URL publique sera renseignée une fois le service démarré.
 - Vérification locale après ajout de la configuration : `./mvnw.cmd -B verify`, 28 tests réussis et JAR généré (JDK local 25.0.3, cible Java 21). Le Dockerfile prévoit de réexécuter ces tests avec le JDK 21 pendant la construction sur Render.
+
+## 27/10/2026 — F3 : fiche équipement et incidents
+
+- Branche `feature/f3-fiche-equipement`. Depuis F2, la référence ouvre la fiche `/equipements/{id}` : informations de l'équipement, lien vers sa station et liste de tous ses incidents, y compris résolus.
+- Ajout des entités `Incident`, `StatutIncident` et `Prestataire`, avec une relation obligatoire vers l'équipement, une description de 2000 caractères maximum, les dates d'ouverture/résolution et un prestataire facultatif. Ces données couvrent le minimum du §4 pour préparer F4.
+- `EquipementService.consulterEquipement` regroupe les lectures dans sa transaction en lecture seule ; les `join fetch` chargent la station et les prestataires nécessaires à la vue sans dépendre d'Open Session in View ni provoquer de requête par ligne.
+- `IncidentRepository.rechercherParEquipement` filtre en base et ordonne par ouverture décroissante puis identifiant décroissant (RG7). Un équipement absent produit une exception personnalisée et une page 404. Une liste vide produit une page 200 explicite.
+- Les GET `/equipements/**` exigent un profil AGENT ou RESPONSABLE_EXPLOITATION côté serveur (RG11). Les données sont échappées par Thymeleaf ; le bandeau et la déconnexion F1 restent disponibles.
+- Le modèle initialise l'état non affecté sans prestataire. Ses méthodes d'affectation/résolution garantissent des données de démonstration cohérentes : refus d'affecter un incident résolu, date de résolution au moins égale à l'ouverture (RG1/RG2/RG5). Aucun endpoint F7/F8 n'est exposé.
+- Une horloge `Clock.systemUTC()` injectée rend les dates explicites et permettra les tests déterministes de F4/F11. Les vues indiquent UTC. Les couleurs des statuts ne représentent pas les seuils d'urgence F11.
+- Le profil `demo` crée sur un catalogue neuf cinq incidents aux dates relatives (dont 47/48/72 h), un prestataire, des cas affectés/résolus et des équipements sans incident ; un catalogue existant reste intact.
+- Tests ajoutés : `FicheEquipementIntegrationTests` (deux profils, navigation, isolement entre équipements, tri, état vide, 400/404, connexion obligatoire et échappement HTML), `IncidentTest` (invariants et refus sans mutation). Le test du profil demo vérifie aussi les incidents et l'absence de doublons.
+- Vérification F3 : `./mvnw.cmd -B verify` réussie, **38 tests, aucun échec ni erreur**, JAR et rapport JaCoCo générés. Exécution locale sur JDK 25.0.3, cible Java 21 ; la CI de la PR exécute les mêmes vérifications sous Java 21. Les tests HTTP/JPA utilisent H2 et ne modifient pas Supabase.
