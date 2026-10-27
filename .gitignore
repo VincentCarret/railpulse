@@ -5,6 +5,7 @@ out/
 .idea/httpRequests/
 *.log
 config/supabase-local.properties
+# Secrets et variables d'environnement locaux, y compris dans les sous-dossiers.
 .env
 .env.*
 !.env.example

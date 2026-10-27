@@ -5,9 +5,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
     @Query("select i from Incident i left join fetch i.prestataire where i.equipement.id = :equipementId "
             + "order by i.dateOuverture desc, i.id desc")
     List<Incident> rechercherParEquipement(@Param("equipementId") Long equipementId);
+
+    @Query("select i from Incident i join fetch i.equipement e join fetch e.station "
+            + "left join fetch i.prestataire where i.id = :id")
+    Optional<Incident> rechercherDetail(@Param("id") Long id);
 }

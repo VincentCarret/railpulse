@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|Incident ${incident.id} · Rail Pulse|"></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="container page-content">
+    <nav aria-label="Fil d’Ariane" class="mb-4">
+        <a th:href="@{/}">Accueil</a> / <a th:href="@{/stations}">Stations</a> /
+        <a th:href="@{/stations/{id}/equipements(id=${incident.equipement.station.id})}" th:text="${incident.equipement.station.nom}"></a> /
+        <a th:href="@{/equipements/{id}(id=${incident.equipement.id})}" th:text="${incident.equipement.reference}"></a> /
+        <span aria-current="page" th:text="|Incident #${incident.id}|"></span>
+    </nav>
+    <p class="section-label">SUIVI DES INCIDENTS</p>
+    <h1 th:text="|Incident #${incident.id}|"></h1>
+    <span class="incident-status" th:attr="data-statut=${incident.statut}" th:text="${incident.statut.libelle}"></span>
+    <section class="form-card my-4" aria-labelledby="description-titre">
+        <h2 id="description-titre" class="h4">Description</h2>
+        <p class="incident-description" th:text="${incident.description}"></p>
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Équipement</dt>
+            <dd class="col-sm-8"><a th:href="@{/equipements/{id}(id=${incident.equipement.id})}" th:text="|${incident.equipement.reference} · ${incident.equipement.libelle}|"></a></dd>
+            <dt class="col-sm-4">Station</dt><dd class="col-sm-8" th:text="${incident.equipement.station.nom}"></dd>
+            <dt class="col-sm-4">Ouverture (UTC)</dt><dd class="col-sm-8" th:text="${#temporals.format(incident.dateOuverture, 'dd/MM/yyyy HH:mm')}"></dd>
+            <dt class="col-sm-4" th:text="${incident.dateResolution == null ? 'Durée d’ouverture actuelle' : 'Durée avant résolution'}"></dt>
+            <dd class="col-sm-8" th:text="${dureeOuverture}"></dd>
+            <dt class="col-sm-4">Résolution (UTC)</dt>
+            <dd class="col-sm-8" th:text="${incident.dateResolution != null ? #temporals.format(incident.dateResolution, 'dd/MM/yyyy HH:mm') : 'Incident en cours'}"></dd>
+        </dl>
+    </section>
+    <section class="form-card my-4" aria-labelledby="prestataire-titre">
+        <h2 id="prestataire-titre" class="h4">Prestataire</h2>
+        <p th:if="${incident.prestataire == null}">Aucun prestataire affecté.</p>
+        <dl th:if="${incident.prestataire != null}" class="row mb-0">
+            <dt class="col-sm-4">Nom</dt><dd class="col-sm-8" th:text="${incident.prestataire.nom}"></dd>
+            <dt class="col-sm-4">Contact</dt><dd class="col-sm-8" th:text="${incident.prestataire.contact}"></dd>
+        </dl>
+    </section>
+    <section class="form-card my-4" aria-labelledby="evaluation-titre">
+        <h2 id="evaluation-titre" class="h4">Évaluation de l’intervention</h2>
+        <p th:if="${evaluation == null}">Aucune évaluation enregistrée.</p>
+        <dl th:if="${evaluation != null}" class="row mb-0">
+            <dt class="col-sm-4">Note</dt><dd class="col-sm-8" th:text="|${evaluation.note} / 5|"></dd>
+            <dt class="col-sm-4">Date (UTC)</dt><dd class="col-sm-8" th:text="${#temporals.format(evaluation.date, 'dd/MM/yyyy HH:mm')}"></dd>
+            <dt class="col-sm-4">Commentaire</dt><dd class="col-sm-8 incident-description" th:text="${#strings.isEmpty(evaluation.commentaire) ? 'Aucun commentaire.' : evaluation.commentaire}"></dd>
+        </dl>
+    </section>
+    <a class="btn btn-outline-secondary" th:href="@{/equipements/{id}(id=${incident.equipement.id})}">Retour à la fiche équipement</a>
+</main>
+</body>
+</html>

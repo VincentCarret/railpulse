@@ -30,7 +30,7 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/login", "/css/**", "/js/**", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/stations", "/stations/**", "/equipements/**")
+                        .requestMatchers(HttpMethod.GET, "/stations", "/stations/**", "/equipements/**", "/incidents/**")
                         .hasAnyRole("AGENT", "RESPONSABLE_EXPLOITATION")
                         .requestMatchers(HttpMethod.POST, "/equipements/*/incidents")
                         .hasAnyRole("AGENT", "RESPONSABLE_EXPLOITATION")
