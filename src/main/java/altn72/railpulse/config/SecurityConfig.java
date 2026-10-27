@@ -3,6 +3,7 @@ package altn72.railpulse.config;
 import altn72.railpulse.service.AuthService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -29,6 +30,8 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/login", "/css/**", "/js/**", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/stations", "/stations/**")
+                        .hasAnyRole("AGENT", "RESPONSABLE_EXPLOITATION")
                         .anyRequest().authenticated())
                 .formLogin(form -> form.loginPage("/login")
                         .failureUrl("/login?error")
