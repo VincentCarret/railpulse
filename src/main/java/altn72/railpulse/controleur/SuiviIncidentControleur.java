@@ -41,6 +41,12 @@ public class SuiviIncidentControleur {
         binder.setAllowedFields("prestataireId");
     }
 
+    @GetMapping("/historique")
+    public String historique(Model model) {
+        model.addAttribute("incidents", incidentService.consulterHistorique());
+        return "historiqueIncidents";
+    }
+
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model, Authentication authentication) {
         DetailIncident detail = incidentService.consulter(id);

@@ -6,6 +6,7 @@ import altn72.railpulse.modele.Incident;
 import altn72.railpulse.modele.IncidentRepository;
 import altn72.railpulse.modele.Prestataire;
 import altn72.railpulse.modele.PrestataireRepository;
+import altn72.railpulse.modele.StatutIncident;
 import altn72.railpulse.service.exception.IncidentIntrouvableException;
 import altn72.railpulse.service.exception.PrestataireIntrouvableException;
 import jakarta.validation.Valid;
@@ -45,6 +46,11 @@ public class IncidentService {
 
     public Incident lireIncident(Long id) {
         return incidents.rechercherDetail(id).orElseThrow(() -> new IncidentIntrouvableException(id));
+    }
+
+    @PreAuthorize("hasAnyRole('AGENT', 'RESPONSABLE_EXPLOITATION')")
+    public List<Incident> consulterHistorique() {
+        return incidents.rechercherParStatutEtDateResolutionDecroissante(StatutIncident.RESOLU);
     }
 
     private String dureeOuverture(Incident incident) {

@@ -15,7 +15,8 @@ Ce document décrit les correctifs proposés sur `fix/conformite-mi-parcours`. I
 | F6 | Réalisée | Description active corrigée par le responsable, refus agent et résolu côté serveur. |
 | F7 | Réalisée | Affectation et réaffectation des incidents actifs par le responsable ; refus des résolus et droits côté serveur. |
 | F8 | Réalisée | Résolution d'un incident actif avec horodatage serveur, confirmation, contrôle du rôle et refus des transitions invalides. |
-| F9–F12 | à réaliser | Historique global, saisie d'évaluation, supervision et API OpenAPI. |
+| F9 | Réalisée | Historique global des seuls incidents résolus, tri par résolution décroissante et liens vers les détails. |
+| F10–F12 | à réaliser | Saisie d'évaluation, supervision et API OpenAPI. |
 
 ## écarts de l'audit corrigés
 
@@ -32,7 +33,7 @@ Ce document décrit les correctifs proposés sur `fix/conformite-mi-parcours`. I
 
 ## Preuves de vérification
 
-- `mvnw verify` local avec F8 : **86 tests, 0 échec, 0 erreur**, JAR et JaCoCo générés.
+- `mvnw verify` local avec F9 : **90 tests, 0 échec, 0 erreur**, JAR et JaCoCo générés.
 - JAR autonome lancé avec une base H2 fichier neuve, sans configuration de test : connexion des deux comptes, F2/F3, F4, détail F5, refus d'édition agent, correction responsable, CSV et déconnexion vérifiés par HTTP. Instance de vérification arrêtée.
 - CI Java 21 : **75 tests réussis sur H2 et 75 sur PostgreSQL 17**, aucun échec ni erreur. Les quatre contextes PostgreSQL utilisent ce moteur sans repli H2. [Exécution de référence](https://github.com/VincentCarret/railpulse/actions/runs/40544261917), résultats et rapports attachés à la PR. Aucun secret de production ni accès Supabase nécessaire.
 - `.env` et ses variantes sont ignorés. `.env.example` contient seulement des champs vides ou factices. Les bases locales et secrets sont aussi exclus du contexte Docker.
@@ -48,7 +49,7 @@ Le schéma et les données peuvent être reconstruits à partir des entités et 
 1. Relire et intégrer la PR, importer le `.env` mis à jour dans Render avant d'activer `demo`, puis déployer et contrôler les deux profils.
 2. Si l'ancien secret présent dans l'historique Git est encore utilisé, le renouveler ; l'historique n'a pas été réécrit.
 3. Faire valider par les deux membres leurs contributions réelles et leur difficulté principale ; seules les traces Git sont attestées dans le bilan.
-4. Développer F9–F12 et leurs tests, notamment les seuils 48/72 h, l'historique et l'API documentée.
+4. Développer F10–F12 et leurs tests, notamment les seuils 48/72 h et l'API documentée.
 5. Réaliser les contrôles de copie propre, rendu navigateur et maîtrise orale prévus par le sujet avant le rendu final.
 
 Six fonctionnalités sur douze sont réalisées. Les deux alpha et les fondations techniques sont vérifiables ; cela n'équivaut pas à une conformité finale de F1 à F12 ni à une estimation de note.
