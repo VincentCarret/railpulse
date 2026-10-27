@@ -5,6 +5,7 @@ import altn72.railpulse.service.exception.StationIntrouvableException;
 import altn72.railpulse.service.exception.EquipementIntrouvableException;
 import altn72.railpulse.service.exception.EtatIncidentInvalideException;
 import altn72.railpulse.service.exception.IncidentIntrouvableException;
+import altn72.railpulse.service.exception.PrestataireIntrouvableException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IncidentIntrouvableException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String incidentIntrouvable(IncidentIntrouvableException exception, Model model) {
+        return erreur(model, 404, exception.getMessage());
+    }
+
+    @ExceptionHandler(PrestataireIntrouvableException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String prestataireIntrouvable(PrestataireIntrouvableException exception, Model model) {
         return erreur(model, 404, exception.getMessage());
     }
 

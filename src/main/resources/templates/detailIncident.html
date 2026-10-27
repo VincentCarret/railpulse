@@ -20,6 +20,8 @@
     <h1 th:text="|Incident #${incident.id}|"></h1>
     <div class="alert alert-success mt-3" role="status" th:if="${succes}" th:text="${succes}"></div>
     <a th:if="${modificationAutorisee}" class="btn btn-success my-3" th:href="@{/incidents/{id}/modifier(id=${incident.id})}">Modifier la description</a>
+    <a th:if="${affectationAutorisee}" class="btn btn-outline-success my-3" th:href="@{/incidents/{id}/affecter(id=${incident.id})}"
+       th:text="${incident.prestataire == null ? 'Affecter un prestataire' : 'Réaffecter le prestataire'}"></a>
     <span class="incident-status" th:attr="data-statut=${incident.statut}" th:text="${incident.statut.libelle}"></span>
     <section class="form-card my-4" aria-labelledby="description-titre">
         <h2 id="description-titre" class="h4">Description</h2>

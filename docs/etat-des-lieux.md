@@ -13,7 +13,8 @@ Ce document décrit les correctifs proposés sur `fix/conformite-mi-parcours`. I
 | F4 | Réalisée | Validation, date serveur, non affecté sans prestataire, champs falsifiés ignorés. |
 | F5 | Réalisée | Détail, durée courante ou arrêtée à la résolution, prestataire et évaluation éventuels. |
 | F6 | Réalisée | Description active corrigée par le responsable, refus agent et résolu côté serveur. |
-| F7–F12 | à réaliser | Affectation, résolution, historique global, saisie d'évaluation, supervision et API OpenAPI. |
+| F7 | Réalisée | Affectation et réaffectation des incidents actifs par le responsable ; refus des résolus et droits côté serveur. |
+| F8–F12 | à réaliser | Résolution, historique global, saisie d'évaluation, supervision et API OpenAPI. |
 
 ## écarts de l'audit corrigés
 
@@ -46,7 +47,7 @@ Le schéma et les données peuvent être reconstruits à partir des entités et 
 1. Relire et intégrer la PR, importer le `.env` mis à jour dans Render avant d'activer `demo`, puis déployer et contrôler les deux profils.
 2. Si l'ancien secret présent dans l'historique Git est encore utilisé, le renouveler ; l'historique n'a pas été réécrit.
 3. Faire valider par les deux membres leurs contributions réelles et leur difficulté principale ; seules les traces Git sont attestées dans le bilan.
-4. Développer F7–F12 et leurs tests, notamment les seuils 48/72 h, l'historique et l'API documentée.
+4. Développer F8–F12 et leurs tests, notamment les seuils 48/72 h, l'historique et l'API documentée.
 5. Réaliser les contrôles de copie propre, rendu navigateur et maîtrise orale prévus par le sujet avant le rendu final.
 
 Six fonctionnalités sur douze sont réalisées. Les deux alpha et les fondations techniques sont vérifiables ; cela n'équivaut pas à une conformité finale de F1 à F12 ni à une estimation de note.

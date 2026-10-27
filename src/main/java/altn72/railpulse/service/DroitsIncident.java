@@ -17,4 +17,8 @@ public class DroitsIncident {
     public boolean peutModifier(Incident incident, Authentication authentication) {
         return estResponsable(authentication) && incident.isModifiable();
     }
+
+    public boolean peutAffecter(Incident incident, Authentication authentication) {
+        return estResponsable(authentication) && incident.isModifiable();
+    }
 }

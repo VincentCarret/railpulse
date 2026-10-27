@@ -66,14 +66,18 @@ public class Incident {
     }
 
     public void affecter(Prestataire prestataire) {
-        if (statut == StatutIncident.RESOLU) {
-            throw new EtatIncidentInvalideException("Un incident résolu ne peut plus être affecté ni réaffecté.");
-        }
+        verifierAffectable();
         if (prestataire == null) {
             throw new EtatIncidentInvalideException("Un prestataire est nécessaire pour affecter l'incident.");
         }
         this.prestataire = prestataire;
         this.statut = StatutIncident.AFFECTE;
+    }
+
+    public void verifierAffectable() {
+        if (statut == StatutIncident.RESOLU) {
+            throw new EtatIncidentInvalideException("Un incident résolu ne peut plus être affecté ni réaffecté.");
+        }
     }
 
     public void resoudre(LocalDateTime dateResolution) {
