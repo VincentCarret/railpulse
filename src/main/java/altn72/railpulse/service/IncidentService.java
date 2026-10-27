@@ -4,12 +4,16 @@ import altn72.railpulse.modele.Equipement;
 import altn72.railpulse.modele.EvaluationRepository;
 import altn72.railpulse.modele.Incident;
 import altn72.railpulse.modele.IncidentRepository;
+import altn72.railpulse.modele.Prestataire;
+import altn72.railpulse.modele.PrestataireRepository;
 import altn72.railpulse.service.exception.IncidentIntrouvableException;
+import altn72.railpulse.service.exception.PrestataireIntrouvableException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +27,15 @@ public class IncidentService {
     private final IncidentRepository incidents;
     private final Clock horloge;
     private final EvaluationRepository evaluations;
+    private final PrestataireRepository prestataires;
 
     public IncidentService(EquipementService equipementService, IncidentRepository incidents,
-                           Clock horloge, EvaluationRepository evaluations) {
+                           Clock horloge, EvaluationRepository evaluations, PrestataireRepository prestataires) {
         this.equipementService = equipementService;
         this.incidents = incidents;
         this.horloge = horloge;
         this.evaluations = evaluations;
+        this.prestataires = prestataires;
     }
 
     public DetailIncident consulter(Long id) {
@@ -72,5 +78,29 @@ public class IncidentService {
         Incident incident = incidents.verrouillerPourModification(id)
                 .orElseThrow(() -> new IncidentIntrouvableException(id));
         incident.modifierDescription(modification.getDescription());
+    }
+
+    @PreAuthorize("hasRole('RESPONSABLE_EXPLOITATION')")
+    public Incident preparerAffectation(Long id) {
+        Incident incident = lireIncident(id);
+        incident.verifierAffectable();
+        return incident;
+    }
+
+    @PreAuthorize("hasRole('RESPONSABLE_EXPLOITATION')")
+    public List<Prestataire> listerPrestataires() {
+        return prestataires.findAllByOrderByNomAscIdAsc();
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('RESPONSABLE_EXPLOITATION')")
+    public void affecterPrestataire(Long id,
+                                   @NotNull(message = "Choisissez un prestataire.") @Valid AffectationPrestataire affectation) {
+        Incident incident = incidents.verrouillerPourModification(id)
+                .orElseThrow(() -> new IncidentIntrouvableException(id));
+        incident.verifierAffectable();
+        Prestataire prestataire = prestataires.findById(affectation.getPrestataireId())
+                .orElseThrow(() -> new PrestataireIntrouvableException(affectation.getPrestataireId()));
+        incident.affecter(prestataire);
     }
 }

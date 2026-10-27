@@ -2,6 +2,7 @@ package altn72.railpulse.controleur;
 
 import altn72.railpulse.modele.Incident;
 import altn72.railpulse.service.DescriptionIncident;
+import altn72.railpulse.service.AffectationPrestataire;
 import altn72.railpulse.service.DetailIncident;
 import altn72.railpulse.service.DroitsIncident;
 import altn72.railpulse.service.IncidentService;
@@ -35,6 +36,11 @@ public class SuiviIncidentControleur {
         binder.setAllowedFields("description");
     }
 
+    @InitBinder("affectationPrestataire")
+    public void limiterChampsAffectation(WebDataBinder binder) {
+        binder.setAllowedFields("prestataireId");
+    }
+
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model, Authentication authentication) {
         DetailIncident detail = incidentService.consulter(id);
@@ -42,7 +48,37 @@ public class SuiviIncidentControleur {
         model.addAttribute("evaluation", detail.evaluation());
         model.addAttribute("dureeOuverture", detail.dureeOuverture());
         model.addAttribute("modificationAutorisee", droitsIncident.peutModifier(detail.incident(), authentication));
+        model.addAttribute("affectationAutorisee", droitsIncident.peutAffecter(detail.incident(), authentication));
         return "detailIncident";
+    }
+
+    @GetMapping("/{id}/affecter")
+    public String preparerAffectation(@PathVariable Long id, Model model) {
+        Incident incident = incidentService.preparerAffectation(id);
+        AffectationPrestataire affectation = new AffectationPrestataire();
+        if (incident.getPrestataire() != null) {
+            affectation.setPrestataireId(incident.getPrestataire().getId());
+        }
+        model.addAttribute("affectationPrestataire", affectation);
+        return formulaireAffectation(incident, model);
+    }
+
+    @PostMapping("/{id}/affecter")
+    public String affecter(@PathVariable Long id,
+                           @Valid @ModelAttribute("affectationPrestataire") AffectationPrestataire affectation,
+                           BindingResult erreurs, Model model, RedirectAttributes redirection) {
+        if (erreurs.hasErrors()) {
+            return formulaireAffectation(incidentService.preparerAffectation(id), model);
+        }
+        incidentService.affecterPrestataire(id, affectation);
+        redirection.addFlashAttribute("succes", "Le prestataire a été affecté à l'incident.");
+        return "redirect:/incidents/" + id;
+    }
+
+    private String formulaireAffectation(Incident incident, Model model) {
+        model.addAttribute("incident", incident);
+        model.addAttribute("prestataires", incidentService.listerPrestataires());
+        return "affecterPrestataire";
     }
 
     @GetMapping("/{id}/modifier")
