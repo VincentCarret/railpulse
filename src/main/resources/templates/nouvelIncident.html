@@ -21,12 +21,7 @@
     <form class="form-card" method="post" th:object="${declarationIncident}"
           th:action="@{/equipements/{id}/incidents(id=${equipement.id})}">
         <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">Aucun incident n’a été enregistré. Corrigez les informations ci-dessous.</div>
-        <label for="description" class="form-label">Description du problème *</label>
-        <textarea id="description" th:field="*{description}" class="form-control" rows="6" required
-                  th:maxlength="${longueurDescriptionMax}" th:errorclass="is-invalid"
-                  aria-describedby="description-aide description-erreur" th:attr="aria-invalid=${#fields.hasErrors('description')}"></textarea>
-        <p id="description-aide" class="form-text" th:text="|Champ obligatoire, ${longueurDescriptionMax} caractères maximum. Précisez les symptômes et leur localisation.|"></p>
-        <p id="description-erreur" class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+        <div th:replace="~{fragments/incident-description :: champs}"></div>
         <div class="d-flex flex-wrap gap-3 mt-4">
             <button type="submit" class="btn btn-success">Déclarer l’incident</button>
             <a class="btn btn-outline-secondary" th:href="@{/equipements/{id}(id=${equipement.id})}">Annuler</a>

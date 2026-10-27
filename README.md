@@ -57,7 +57,7 @@ Pour initialiser un catalogue de démonstration vide, ajouter le profil `demo` a
 Le profil `demo` crée trois stations et cinq équipements couvrant cinq types et les trois états ; une station reste sans équipement pour montrer ce cas.
 L'initialisation est atomique et ne s'exécute que si les deux tables sont vides. Les relancements ne dupliquent ni ne remplacent le catalogue existant.
 Sans le profil `demo`, aucune donnée métier n'est ajoutée automatiquement. Les utilisateurs de F1 sont conservés ; aucun compte ni mot de passe n'est créé par F2.
-Les fonctionnalités F6 à F12 restent à réaliser.
+Les fonctionnalités F7 à F12 restent à réaliser.
 
 Le développement F2 est isolé dans `feature/f2-equipements-par-station`. Les fonctionnalités suivantes pourront suivre le même nommage `feature/fN-description`, en partant de `master` après intégration de leurs dépendances.
 
@@ -98,7 +98,20 @@ Une évaluation existante apparaît avec note, commentaire éventuel et date. En
 Le modèle d'évaluation respecte RG8 : incident résolu avec prestataire, note entière de 1 à 5, une seule évaluation par incident. Sa saisie par l'interface relève de F10 et reste à réaliser.
 Sur un catalogue de démonstration neuf, le profil `demo` ajoute une évaluation à l'incident résolu. Les données d'un catalogue existant sont conservées.
 Les ressources absentes renvoient 404, les identifiants mal formés 400 et les visiteurs sont redirigés vers la connexion.
-Branche F5 : `feature/f5-detail-incident`.
+Branche F5 : `feature/f5-detail-incident`, avec PR vers `master`.
+
+## F6 — Modifier les informations autorisées
+
+Le responsable d'exploitation peut ouvrir **Modifier la description** depuis le détail d'un incident actif, puis corriger sa description.
+L'agent garde un accès en lecture : le formulaire et la modification sont aussi interdits côté serveur, même en fabriquant une requête HTTP.
+Les incidents résolus ne sont plus modifiables afin de préserver l'historique ; une tentative renvoie 409, y compris si la résolution intervient après l'ouverture du formulaire.
+
+La description reste obligatoire et limitée à 2000 caractères. Les erreurs conservent les valeurs saisies sans modifier la base. La création et la modification utilisent les mêmes contraintes et le même fragment de formulaire.
+L'équipement, l'identifiant, les dates, le statut, le prestataire et l'évaluation sont conservés. F7/F8 auront leurs propres opérations pour les transitions d'état.
+Une réussite redirige vers le détail avec un message de confirmation. L'annulation revient à ce détail sans écriture.
+
+Les droits sont vérifiés dans les routes et dans le service (`@PreAuthorize`). Une transaction d'écriture verrouille et relit l'incident avant de vérifier son état, puis ne modifie que la description.
+Branche F6 : `feature/f6-modification-incident`, basée sur F5. Sa PR vise F5 pour isoler les changements ; intégrer F5 en premier puis recibler F6 sur `master`.
 
 Les fichiers `.env` et `.env.*` sont ignorés par Git, y compris dans les sous-dossiers. Seuls les exemples sans secrets, comme `.env.example`, peuvent être versionnés.
 
