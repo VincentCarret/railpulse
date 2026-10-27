@@ -17,6 +17,8 @@
     </nav>
     <p class="section-label">FICHE ÉQUIPEMENT</p>
     <h1 th:text="${equipement.libelle}"></h1>
+    <div class="alert alert-success mt-3" role="status" th:if="${succes}" th:text="${succes}"></div>
+    <a class="btn btn-success mt-3" th:href="@{/equipements/{id}/incidents/nouveau(id=${equipement.id})}">Déclarer un incident</a>
     <dl class="form-card row mx-0 my-4">
         <dt class="col-sm-4">Référence</dt><dd class="col-sm-8" th:text="${equipement.reference}"></dd>
         <dt class="col-sm-4">Station</dt><dd class="col-sm-8" th:text="${equipement.station.nom}"></dd>

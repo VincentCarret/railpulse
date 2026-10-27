@@ -32,6 +32,8 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/css/**", "/js/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/stations", "/stations/**", "/equipements/**")
                         .hasAnyRole("AGENT", "RESPONSABLE_EXPLOITATION")
+                        .requestMatchers(HttpMethod.POST, "/equipements/*/incidents")
+                        .hasAnyRole("AGENT", "RESPONSABLE_EXPLOITATION")
                         .anyRequest().authenticated())
                 .formLogin(form -> form.loginPage("/login")
                         .failureUrl("/login?error")
