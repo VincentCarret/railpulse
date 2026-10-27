@@ -57,7 +57,7 @@ Pour initialiser un catalogue de démonstration vide, ajouter le profil `demo` a
 Le profil `demo` crée trois stations et cinq équipements couvrant cinq types et les trois états ; une station reste sans équipement pour montrer ce cas.
 L'initialisation est atomique et ne s'exécute que si les deux tables sont vides. Les relancements ne dupliquent ni ne remplacent le catalogue existant.
 Sans le profil `demo`, aucune donnée métier n'est ajoutée automatiquement. Les utilisateurs de F1 sont conservés ; aucun compte ni mot de passe n'est créé par F2.
-Les fonctionnalités F4 à F12 restent à réaliser.
+Les fonctionnalités F5 à F12 restent à réaliser.
 
 Le développement F2 est isolé dans `feature/f2-equipements-par-station`. Les fonctionnalités suivantes pourront suivre le même nommage `feature/fN-description`, en partant de `master` après intégration de leurs dépendances.
 
@@ -74,6 +74,19 @@ Un catalogue déjà renseigné est conservé ; activer `demo` ne réinjecte pas 
 Le modèle contient les transitions nécessaires à ces données cohérentes ; les écrans d'affectation/résolution (F7/F8) et le détail d'incident (F5) restent à réaliser.
 
 Branche F3 : `feature/f3-fiche-equipement`.
+
+## F4 — Déclarer un incident
+
+Depuis la fiche d'un équipement, cliquer sur **Déclarer un incident**, saisir une description puis valider.
+Les deux profils disposent de cette action. La description est obligatoire, non blanche et limitée à 2000 caractères côté navigateur et côté serveur.
+Une saisie invalide conserve le formulaire et les valeurs, affiche un message français et n'écrit rien en base.
+
+Le POST `/equipements/{id}/incidents` utilise uniquement la description : l'équipement vient de l'URL, l'ouverture est calculée par l'horloge UTC du serveur, le statut initial est **Non affecté**, sans prestataire ni date de résolution (RG1/RG2).
+Une réussite redirige vers la fiche avec un message de confirmation et le nouvel incident dans la liste ; rafraîchir cette fiche ne répète pas la déclaration.
+La connexion et un jeton CSRF sont requis. Les identifiants, dates, statuts et prestataires ajoutés artificiellement au formulaire ne sont pas liés au modèle.
+
+La déclaration ne change pas automatiquement l'état de fonctionnement du catalogue : un signalement peut décrire une anomalie sans arrêt complet. Plusieurs incidents d'un même équipement restent possibles ; le sujet ne prescrit pas de restriction supplémentaire.
+Branche F4 : `feature/f4-declaration-incident`, basée sur F3. F3 est intégrée en premier ; la PR F4 vise `master` et contient uniquement la déclaration d'incident.
 
 ## Qualité et tests
 
