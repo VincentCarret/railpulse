@@ -81,14 +81,18 @@ public class Incident {
     }
 
     public void resoudre(LocalDateTime dateResolution) {
-        if (statut == StatutIncident.RESOLU) {
-            throw new EtatIncidentInvalideException("Cet incident est déjà résolu.");
-        }
+        verifierResolvable();
         if (dateResolution == null || dateResolution.isBefore(dateOuverture)) {
             throw new EtatIncidentInvalideException("La résolution doit être postérieure ou égale à l'ouverture.");
         }
         this.dateResolution = dateResolution;
         this.statut = StatutIncident.RESOLU;
+    }
+
+    public void verifierResolvable() {
+        if (statut == StatutIncident.RESOLU) {
+            throw new EtatIncidentInvalideException("Cet incident est déjà résolu.");
+        }
     }
 
     public boolean isModifiable() {

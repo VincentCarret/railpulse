@@ -49,7 +49,21 @@ public class SuiviIncidentControleur {
         model.addAttribute("dureeOuverture", detail.dureeOuverture());
         model.addAttribute("modificationAutorisee", droitsIncident.peutModifier(detail.incident(), authentication));
         model.addAttribute("affectationAutorisee", droitsIncident.peutAffecter(detail.incident(), authentication));
+        model.addAttribute("resolutionAutorisee", droitsIncident.peutResoudre(detail.incident(), authentication));
         return "detailIncident";
+    }
+
+    @GetMapping("/{id}/resoudre")
+    public String preparerResolution(@PathVariable Long id, Model model) {
+        model.addAttribute("incident", incidentService.preparerResolution(id));
+        return "resoudreIncident";
+    }
+
+    @PostMapping("/{id}/resoudre")
+    public String resoudre(@PathVariable Long id, RedirectAttributes redirection) {
+        incidentService.resoudreIncident(id);
+        redirection.addFlashAttribute("succes", "L'incident a été déclaré résolu.");
+        return "redirect:/incidents/" + id;
     }
 
     @GetMapping("/{id}/affecter")

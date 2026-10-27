@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|Résoudre l'incident ${incident.id} · Rail Pulse|"></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="container page-content">
+    <nav aria-label="Fil d'Ariane" class="mb-4"><a th:href="@{/}">Accueil</a> /
+        <a th:href="@{/incidents/{id}(id=${incident.id})}" th:text="|Incident #${incident.id}|"></a> / Résolution</nav>
+    <p class="section-label">SUIVI DES INCIDENTS</p>
+    <h1 th:text="|Déclarer l'incident #${incident.id} résolu|"></h1>
+    <section class="form-card my-4">
+        <p><strong th:text="${incident.equipement.reference}"></strong> · <span th:text="${incident.description}"></span></p>
+        <p>La date et l'heure de résolution seront enregistrées au moment de la confirmation (UTC).</p>
+        <form method="post" th:action="@{/incidents/{id}/resoudre(id=${incident.id})}">
+            <div class="d-flex flex-wrap gap-3 mt-4">
+                <button type="submit" class="btn btn-primary">Confirmer la résolution</button>
+                <a class="btn btn-outline-secondary" th:href="@{/incidents/{id}(id=${incident.id})}">Annuler</a>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

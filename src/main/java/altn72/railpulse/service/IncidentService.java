@@ -103,4 +103,19 @@ public class IncidentService {
                 .orElseThrow(() -> new PrestataireIntrouvableException(affectation.getPrestataireId()));
         incident.affecter(prestataire);
     }
+
+    @PreAuthorize("hasRole('RESPONSABLE_EXPLOITATION')")
+    public Incident preparerResolution(Long id) {
+        Incident incident = lireIncident(id);
+        incident.verifierResolvable();
+        return incident;
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('RESPONSABLE_EXPLOITATION')")
+    public void resoudreIncident(Long id) {
+        Incident incident = incidents.verrouillerPourModification(id)
+                .orElseThrow(() -> new IncidentIntrouvableException(id));
+        incident.resoudre(LocalDateTime.now(horloge));
+    }
 }
