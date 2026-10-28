@@ -1,0 +1,201 @@
+openapi: 3.0.3
+info:
+  title: RailPulse - API des incidents
+  version: 1.0.0
+  description: |
+    API F12. Connectez-vous d'abord via le formulaire /login ; la session JSESSIONID
+    est ensuite utilisée pour les appels. Une requête non authentifiée est redirigée
+    vers /login. Seul le responsable d'exploitation peut résoudre un incident.
+    Les dates sont en UTC au format ISO 8601.
+servers:
+  - url: /
+security:
+  - session: []
+paths:
+  /api/csrf:
+    get:
+      summary: Obtenir le jeton CSRF de la session
+      description: Renvoyer le jeton dans l'en-tête indiqué pour toute écriture.
+      responses:
+        '200':
+          description: Jeton de la session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JetonCsrf'
+        '302':
+          $ref: '#/components/responses/ConnexionRequise'
+  /api/incidents:
+    get:
+      summary: Lister les incidents
+      description: Tous les incidents, triés par ouverture décroissante puis identifiant décroissant. Accessible aux deux profils.
+      responses:
+        '200':
+          description: Liste, éventuellement vide
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Incident'
+        '302':
+          $ref: '#/components/responses/ConnexionRequise'
+  /api/incidents/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IncidentId'
+    get:
+      summary: Consulter un incident
+      description: Accessible aux deux profils.
+      responses:
+        '200':
+          description: Incident trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+        '302':
+          $ref: '#/components/responses/ConnexionRequise'
+        '400':
+          $ref: '#/components/responses/IdentifiantInvalide'
+        '404':
+          $ref: '#/components/responses/IncidentAbsent'
+  /api/incidents/{id}/resolution:
+    parameters:
+      - $ref: '#/components/parameters/IncidentId'
+    post:
+      summary: Résoudre un incident actif
+      description: |
+        Réservé au responsable d'exploitation. La date de résolution est générée
+        par le serveur ; aucun corps de requête n'est accepté pour la fixer.
+        Un incident déjà résolu ou ouvert dans le futur renvoie 409 sans modification.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: Incident résolu, avec son nouvel état
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+        '302':
+          $ref: '#/components/responses/ConnexionRequise'
+        '400':
+          $ref: '#/components/responses/IdentifiantInvalide'
+        '403':
+          description: Profil insuffisant ou jeton CSRF absent/invalide
+        '404':
+          $ref: '#/components/responses/IncidentAbsent'
+        '409':
+          description: Transition d'état impossible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erreur'
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+    csrf:
+      type: apiKey
+      in: header
+      name: X-CSRF-TOKEN
+  parameters:
+    IncidentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+  responses:
+    ConnexionRequise:
+      description: Redirection vers /login si la session est absente
+      headers:
+        Location:
+          schema:
+            type: string
+            example: /login
+    IdentifiantInvalide:
+      description: Identifiant non numérique
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
+    IncidentAbsent:
+      description: Aucun incident avec cet identifiant
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erreur'
+  schemas:
+    JetonCsrf:
+      type: object
+      required: [headerName, token]
+      properties:
+        headerName:
+          type: string
+          example: X-CSRF-TOKEN
+        token:
+          type: string
+    Erreur:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: integer
+          example: 404
+        message:
+          type: string
+    Incident:
+      type: object
+      required: [id, description, statut, dateOuverture, equipement]
+      properties:
+        id:
+          type: integer
+          format: int64
+        description:
+          type: string
+        statut:
+          type: string
+          enum: [NON_AFFECTE, AFFECTE, RESOLU]
+        dateOuverture:
+          type: string
+          format: date-time
+          example: '2026-10-27T12:00:00Z'
+        dateResolution:
+          type: string
+          format: date-time
+          nullable: true
+        equipement:
+          $ref: '#/components/schemas/Equipement'
+        prestataire:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Prestataire'
+    Equipement:
+      type: object
+      required: [id, reference, stationId, stationNom]
+      properties:
+        id:
+          type: integer
+          format: int64
+        reference:
+          type: string
+        stationId:
+          type: integer
+          format: int64
+        stationNom:
+          type: string
+    Prestataire:
+      type: object
+      required: [id, nom]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nom:
+          type: string

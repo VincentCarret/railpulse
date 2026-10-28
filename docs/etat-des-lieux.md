@@ -1,7 +1,7 @@
-# État des lieux — conformité à mi-parcours
+# État des lieux — branche F12
 
-**Rail Pulse — Amir Nassiri et Vincent Carret — 27 octobre 2026.**
-Ce document décrit les correctifs proposés sur `fix/conformite-mi-parcours`. Il ne déclare pas le projet final terminé ni les correctifs déjà déployés.
+**Rail Pulse — Amir Nassiri et Vincent Carret — 28 octobre 2026.**
+Ce document décrit l'état du code sur `feature/f12-api-rest-documentee`. Il ne déclare pas le déploiement ni le rendu final validés.
 
 ## Socle fonctionnel
 
@@ -18,7 +18,7 @@ Ce document décrit les correctifs proposés sur `fix/conformite-mi-parcours`. I
 | F9 | Réalisée | Historique global des seuls incidents résolus, tri par résolution décroissante et liens vers les détails. |
 | F10 | Réalisée | Saisie d'une note de 1 à 5 et d'un commentaire facultatif après résolution avec prestataire ; unicité et date serveur. |
 | F11 | Réalisée | Incidents actifs uniquement, indicateurs vert/orange/rouge à 48/72 h calculés à l'heure courante, affectés distincts, filtres et synthèse. |
-| F12 | à réaliser | API REST documentée avec OpenAPI. |
+| F12 | Réalisée sur la branche dédiée | Liste et détail JSON des incidents, résolution protégée et document OpenAPI 3. |
 
 ## écarts de l'audit corrigés
 
@@ -35,11 +35,11 @@ Ce document décrit les correctifs proposés sur `fix/conformite-mi-parcours`. I
 
 ## Preuves de vérification
 
-- `mvnw verify` local avec F11 : **103 tests, 0 échec, 0 erreur**, JAR et JaCoCo générés.
+- `mvnw verify` local avec F12 : **108 tests, 0 échec, 0 erreur**, JAR et JaCoCo générés.
 - JAR autonome lancé avec une base H2 fichier neuve, sans configuration de test : connexion des deux comptes, F2/F3, F4, détail F5, refus d'édition agent, correction responsable, CSV et déconnexion vérifiés par HTTP. Instance de vérification arrêtée.
 - CI Java 21 : **75 tests réussis sur H2 et 75 sur PostgreSQL 17**, aucun échec ni erreur. Les quatre contextes PostgreSQL utilisent ce moteur sans repli H2. [Exécution de référence](https://github.com/VincentCarret/railpulse/actions/runs/40544261917), résultats et rapports attachés à la PR. Aucun secret de production ni accès Supabase nécessaire.
 - `.env` et ses variantes sont ignorés. `.env.example` contient seulement des champs vides ou factices. Les bases locales et secrets sont aussi exclus du contexte Docker.
-- La page publique Render répond HTTP 200 ; cela ne certifie pas à elle seule le déploiement des présents correctifs ou les parcours authentifiés de cette version.
+- La page publique Render a répondu HTTP 200 lors d'un audit antérieur, mais elle n'a pas répondu lors du contrôle du 28 octobre 2026. Le déploiement et les parcours authentifiés de cette branche restent à vérifier.
 
 ## Exigences transverses
 
@@ -51,7 +51,7 @@ Le schéma et les données peuvent être reconstruits à partir des entités et 
 1. Relire et intégrer la PR, importer le `.env` mis à jour dans Render avant d'activer `demo`, puis déployer et contrôler les deux profils.
 2. Si l'ancien secret présent dans l'historique Git est encore utilisé, le renouveler ; l'historique n'a pas été réécrit.
 3. Faire valider par les deux membres leurs contributions réelles et leur difficulté principale ; seules les traces Git sont attestées dans le bilan.
-4. Développer F12 et ses tests, notamment l'API documentée.
+4. Faire relire et intégrer la branche F12, puis vérifier ses parcours sur le déploiement.
 5. Réaliser les contrôles de copie propre, rendu navigateur et maîtrise orale prévus par le sujet avant le rendu final.
 
-Six fonctionnalités sur douze sont réalisées. Les deux alpha et les fondations techniques sont vérifiables ; cela n'équivaut pas à une conformité finale de F1 à F12 ni à une estimation de note.
+Les douze fonctionnalités sont présentes sur la branche F12. Les deux alpha et les fondations techniques sont vérifiables ; le rendu final et le déploiement demandent encore une validation distincte.
