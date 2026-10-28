@@ -49,6 +49,11 @@ public class IncidentService {
     }
 
     @PreAuthorize("hasAnyRole('AGENT', 'RESPONSABLE_EXPLOITATION')")
+    public List<Incident> consulterTous() {
+        return incidents.rechercherTousParOuvertureDecroissante();
+    }
+
+    @PreAuthorize("hasAnyRole('AGENT', 'RESPONSABLE_EXPLOITATION')")
     public List<Incident> consulterHistorique() {
         return incidents.rechercherParStatutEtDateResolutionDecroissante(StatutIncident.RESOLU);
     }
