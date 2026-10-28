@@ -17,6 +17,7 @@
     <p>Consultez les équipements du réseau et leur état de fonctionnement.</p>
     <a class="home-link" th:href="@{/stations}">Consulter les équipements par station →</a>
     <a class="home-link" th:href="@{/incidents/historique}">Consulter l'historique des incidents résolus →</a>
+    <a class="home-link" th:if="${profil.name() == 'RESPONSABLE_EXPLOITATION'}" th:href="@{/tableau-de-bord}">Tableau de bord des incidents actifs →</a>
     <a class="home-link" th:href="@{/programmeurs}">Accéder aux programmeurs →</a>
 </main>
 

@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .hasRole("RESPONSABLE_EXPLOITATION")
                         .requestMatchers(HttpMethod.POST, "/incidents/*")
                         .hasRole("RESPONSABLE_EXPLOITATION")
+                        .requestMatchers(HttpMethod.GET, "/tableau-de-bord")
+                        .hasRole("RESPONSABLE_EXPLOITATION")
                         .requestMatchers(HttpMethod.GET, "/stations", "/stations/**", "/equipements/**", "/incidents/**")
                         .hasAnyRole("AGENT", "RESPONSABLE_EXPLOITATION")
                         .requestMatchers(HttpMethod.POST, "/equipements/*/incidents")
