@@ -56,6 +56,7 @@ public class SuiviIncidentControleur {
         model.addAttribute("modificationAutorisee", droitsIncident.peutModifier(detail.incident(), authentication));
         model.addAttribute("affectationAutorisee", droitsIncident.peutAffecter(detail.incident(), authentication));
         model.addAttribute("resolutionAutorisee", droitsIncident.peutResoudre(detail.incident(), authentication));
+        model.addAttribute("evaluationAutorisee", droitsIncident.peutEvaluer(detail.incident(), detail.evaluation(), authentication));
         return "detailIncident";
     }
 

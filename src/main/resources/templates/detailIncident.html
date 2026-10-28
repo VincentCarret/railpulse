@@ -49,6 +49,8 @@
     </section>
     <section class="form-card my-4" aria-labelledby="evaluation-titre">
         <h2 id="evaluation-titre" class="h4">Évaluation de l’intervention</h2>
+        <a th:if="${evaluationAutorisee}" class="btn btn-outline-success mb-3"
+           th:href="@{/incidents/{id}/evaluer(id=${incident.id})}">Évaluer l'intervention</a>
         <p th:if="${evaluation == null}">Aucune évaluation enregistrée.</p>
         <dl th:if="${evaluation != null}" class="row mb-0">
             <dt class="col-sm-4">Note</dt><dd class="col-sm-8" th:text="|${evaluation.note} / 5|"></dd>

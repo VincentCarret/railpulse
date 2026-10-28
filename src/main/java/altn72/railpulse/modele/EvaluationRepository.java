@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     Optional<Evaluation> findByIncidentId(Long incidentId);
+
+    boolean existsByIncidentId(Long incidentId);
 }

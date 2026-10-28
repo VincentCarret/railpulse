@@ -3,7 +3,7 @@
 Projet ALTN72 2026-2027 — **Amir Nassiri et Vincent Carret**.
 Application Java 21 / Spring Boot 4.1.1, Maven, Thymeleaf et JPA. PostgreSQL/Supabase pour le déploiement ; H2 pour la démonstration autonome et les tests rapides.
 
-F1 à F9 sont réalisées. Le [journal](journal.md) justifie les choix et le [bilan de conformité](docs/etat-des-lieux.md) distingue le réalisé du reste à faire.
+F1 à F10 sont réalisées. Le [journal](journal.md) justifie les choix et le [bilan de conformité](docs/etat-des-lieux.md) distingue le réalisé du reste à faire.
 
 ## Démarrer depuis un clone propre sous Windows
 
@@ -39,7 +39,7 @@ Pour le lancement manuel, vérifier qu'aucune variable `SPRING_DATASOURCE_*` hé
 
 Pour Supabase : profil `supabase` (ou `supabase,render` sur Render), paramètres décrits dans [docs/supabase.md](docs/supabase.md). Ajouter `demo` et ses deux secrets si l'on souhaite créer les comptes de démonstration et initialiser un catalogue vide. Le profil `mysql` reste disponible ; son mot de passe doit être fourni par `MYSQL_DB_PASSWORD` ou `SPRING_DATASOURCE_PASSWORD`, sans valeur de secours versionnée.
 
-## Parcours F1 à F9
+## Parcours F1 à F10
 
 1. **F1** : connexion des deux profils, erreur générique en cas d'échec, bandeau utilisateur et déconnexion POST avec fermeture de session.
 2. **F2** : `/stations`, choix de station, type et état de ses seuls équipements ; référence unique en base (RG9).
@@ -50,6 +50,7 @@ Pour Supabase : profil `supabase` (ou `supabase,render` sur Render), paramètres
 7. **F7** : sur le détail d'un incident actif, le responsable choisit un prestataire, puis peut le remplacer. Le prestataire courant est présélectionné. L'agent ne peut que consulter ; un incident résolu refuse toute affectation (409). Un prestataire inexistant renvoie 404 et aucune donnée n'est modifiée.
 8. **F8** : le responsable confirme la résolution d'un incident actif depuis son détail. La date et l'heure de résolution viennent de l'horloge du serveur (UTC) ; une seconde résolution ou une date antérieure à l'ouverture est refusée (409). L'agent conserve un accès en lecture seule.
 9. **F9** : depuis l'accueil, les deux profils consultent `/incidents/historique`, qui présente uniquement les incidents résolus, par date de résolution décroissante. Chaque ligne relie au détail de l'incident et à l'équipement.
+10. **F10** : sur le détail d'un incident résolu et affecté, le responsable saisit une note de 1 à 5 et un commentaire facultatif. Une seule évaluation est autorisée par incident ; sa date vient du serveur (UTC). Les deux profils peuvent ensuite lire la note sur le détail.
 
 Les erreurs conservent la saisie sans écriture ; identifiant mal formé 400, ressource absente 404, accès interdit 403. Les horaires sont en UTC. Le profil `demo` crée des incidents aux dates relatives, dont 47/48/72 h, ainsi que des cas affectés/résolus. Les couleurs actuelles représentent des statuts, pas encore les indicateurs d'urgence F11.
 
@@ -81,4 +82,4 @@ Le CRUD de programmeurs reste un exemple isolé du TP ; il n'est pas compté com
 Application : https://railpulse-23pc.onrender.com à [procédure Render](docs/render.md).
 Le Dockerfile construit et teste avec Java 21. Les variables de base et de démonstration doivent être configurées sur Render avant d'y déployer les correctifs. Le déploiement peut attendre les deux jobs CI via **Auto-Deploy à After CI Checks Pass**.
 
-F10 à F12 restent à réaliser : saisie d'évaluation, supervision/urgence et API REST OpenAPI. Le détail peut déjà afficher une évaluation initialisée, sans interface F10. `ddl-auto=update` et l'initialisation applicative conviennent au projet pédagogique ; des migrations de schéma versionnées restent une amélioration pour une exploitation durable.
+F11 et F12 restent à réaliser : supervision/urgence et API REST OpenAPI. `ddl-auto=update` et l'initialisation applicative conviennent au projet pédagogique ; des migrations de schéma versionnées restent une amélioration pour une exploitation durable.

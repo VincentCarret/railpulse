@@ -1,6 +1,6 @@
 # Journal à Rail Pulse (ALTN72, 2026-2027)
 
-**Groupe : Amir Nassiri et Vincent Carret.** état au 27 octobre 2026, périmètre F1 à F9.
+**Groupe : Amir Nassiri et Vincent Carret.** état au 28 octobre 2026, périmètre F1 à F10.
 
 ## README
 
@@ -10,7 +10,7 @@ Le [README](README.md) contient les prérequis Java 21, les commandes Maven et l
 - Comptes : `demo.agent` / `RAILPULSE_DEMO_AGENT_PASSWORD` et `demo.responsable` / `RAILPULSE_DEMO_RESPONSABLE_PASSWORD`. L'évaluateur définit ses propres mots de passe au lancement ; ils sont hachés avant insertion et ne sont pas versionnés.
 - Base locale : H2 relationnelle dans `.data/`, ignorée par Git. PostgreSQL/Supabase pour Render, MySQL disponible en profil explicite. Le script local force H2 pour protéger les bases distantes d'une configuration héritée.
 - Initialisation : JPA pour le schéma, `ComptesDemonstrationAuDemarrage` et `DonneesDemonstration` pour les données. Migration BCrypt préalable. Les initialisations sont transactionnelles et idempotentes ; aucun écrasement de compte/catalogue existant.
-- Limites : F10 à F12 restent à réaliser. Pas d'interface de saisie d'évaluation F10, pas encore d'indicateur d'urgence F11 ni d'API REST F12. `ddl-auto=update` est un choix pédagogique, pas une stratégie de migration de schéma de production.
+- Limites : F11 et F12 restent à réaliser. Pas encore d'indicateur d'urgence F11 ni d'API REST F12. `ddl-auto=update` est un choix pédagogique, pas une stratégie de migration de schéma de production.
 
 ## ARCHITECTURE
 
@@ -47,11 +47,12 @@ Les tests HTTP lancent un vrai serveur sur port aléatoire et manipulent cookies
 | F7 | Affectation et réaffectation des actifs, formulaire présélectionné, refus des résolus, prestataire absent, saisie invalide, champs falsifiés, droits HTTP et service, CSRF et conservation de l'état après refus. |
 | F8 | Résolution des incidents non affectés ou affectés, date serveur, refus des doublons et des ouvertures futures, champs falsifiés ignorés, droits HTTP et service, CSRF et absence de mutation sur refus. |
 | F9 | Deux profils, résolus uniquement, tri par résolution décroissante puis identifiant, cas vide, liens de détail, accès authentifié et échappement HTML. |
+| F10 | Responsable autorisé, incident résolu avec prestataire, note de 1 à 5, commentaire facultatif, unicité, date serveur, validation, CSRF, champs falsifiés, droits HTTP et service, absence de mutation sur refus. |
 | Sécurité des comptes | Clair et `{noop}` refusés à la connexion ; conversion préalable en BCrypt, idempotence, rollback d'une migration invalide et refus de nouvelles écritures non hachées. |
 | Démonstration | Création transactionnelle des deux comptes, secrets absents refusés, profils préexistants protégés, connexion réelle, catalogue varié et relancement sans duplication. |
 | Export CSV | Droits des deux profils, format/encodage/en-têtes, catalogue vide, guillemets/séparateurs/retours ligne et neutralisation des formules. |
 
-Vérification locale avec F9 : **90 tests réussis, aucun échec ni erreur**, JAR et rapport JaCoCo générés (JDK 21.0.2).
+Vérification locale avec F10 : **97 tests réussis, aucun échec ni erreur**, JAR et rapport JaCoCo générés (JDK 21.0.2).
 Le JAR a aussi été démarré sans configuration de test sur une base H2 fichier neuve : connexion des deux comptes, F2/F3, déclaration F4, détail F5, refus d'édition agent, correction responsable, CSV et déconnexion vérifiés par HTTP. Cette instance temporaire a été arrêtée.
 
 La CI exécute deux jobs Java 21 : H2 et PostgreSQL 17 temporaire. **75 tests réussis sur chacun des deux moteurs**, sans échec ni erreur, dans l'[exécution de référence](https://github.com/VincentCarret/railpulse/actions/runs/40544261917). Les quatre contextes utilisent PostgreSQL sans repli H2, avec des schémas isolés. Les rapports et le JAR sont conservés comme artifacts ; les nouveaux passages sont visibles dans Actions.
@@ -70,10 +71,10 @@ La couverture JaCoCo est une mesure d'exécution, pas une preuve complète de co
 | F7 | Affecter / réaffecter | Interdit | Accès complet sur les incidents actifs |
 | F8 | Résoudre | Interdit | Accès complet sur les incidents actifs |
 | F9 | Historique | Lecture seule | Lecture seule |
-| F10 | évaluer | Interdit | Accès complet prévu |
+| F10 | Évaluer / consulter la note | Lecture seule | Accès complet après résolution avec prestataire |
 | F11 | Tableau de bord | Interdit | Lecture prévue |
 
-F10–F11 décrivent les choix pour la suite ; leurs écrans/opérations ne sont pas réalisés. L'export CSV reprend les droits de lecture du catalogue.
+F11 décrit le choix pour la suite ; son écran n'est pas réalisé. L'export CSV reprend les droits de lecture du catalogue.
 
 F6 ne modifie que la description d'un incident actif : les identifiants, dates, équipement, statut et affectation restent inchangés. Les résolus sont immuables pour préserver l'historique. Les routes et `@PreAuthorize` vérifient le rôle ; `Incident` vérifie l'état. La présence/absence du bouton n'est pas la protection serveur.
 
@@ -82,7 +83,7 @@ F6 ne modifie que la description d'un incident actif : les identifiants, dates, 
 - RG1/RG2 : incident lié à l'équipement de l'URL, ouverture calculée par `Clock`, statut initial non affecté sans prestataire.
 - RG5 : le modèle interdit résolution antérieure à l'ouverture et réaffectation d'un résolu ; F7 et F8 exposent ces transitions avec verrouillage et transaction.
 - RG7 : incidents d'un équipement triés par ouverture décroissante, puis identifiant décroissant. L'historique global F9 est trié par résolution décroissante, puis identifiant décroissant en cas d'égalité.
-- RG8 : évaluation d'un résolu avec prestataire, note 1à5, date cohérente et unicité en base ; F10 n'a pas encore d'interface.
+- RG8 : évaluation d'un résolu avec prestataire, note de 1 à 5, date serveur cohérente et unicité en base. F10 vérifie l'éligibilité sous verrou avant l'enregistrement.
 - RG9 : référence d'équipement unique en base, testée entre stations.
 - RG10/RG11 : transactions, contrôles d'état et droits côté serveur. Les seuils/calculs et listes F11 liés à RG3/RG4/RG6 restent à réaliser.
 
@@ -132,7 +133,7 @@ Besoin : détecter les régressions du socle et démontrer le comportement réel
 
 Réalisé : tests HTTP/JPA et métier, horloge fixe, scénarios invalides et champs falsifiés, migration/rollback, JaCoCo, artifacts et deux jobs CI sur Java 21 avec H2 et PostgreSQL. Cela dépasse la seule présence de validation : les transactions, droits et formats produits sont exercés.
 
-Limites : couverture d'exécution distincte de l'ergonomie et des performances. MySQL n'est pas inclus dans la nouvelle matrice, car le déploiement cible PostgreSQL. F10–F12 nécessiteront leurs propres tests.
+Limites : couverture d'exécution distincte de l'ergonomie et des performances. MySQL n'est pas inclus dans la nouvelle matrice, car le déploiement cible PostgreSQL. F11–F12 nécessiteront leurs propres tests.
 
 ### 2. Export de données à piste 9
 
@@ -167,6 +168,6 @@ Ces difficultés sont attestées par les corrections ; le groupe doit préciser 
 
 ### Reste à faire
 
-F10–F12 : saisie d'évaluation, tableau de bord/urgence (48/72 h) et API REST documentée OpenAPI. Les démonstrations navigateur sur Render, la rotation éventuelle d'un ancien secret et la validation humaine du bilan restent à effectuer. La conformité finale n'est pas déclarée acquise à mi-parcours.
+F11–F12 : tableau de bord/urgence (48/72 h) et API REST documentée OpenAPI. Les démonstrations navigateur sur Render, la rotation éventuelle d'un ancien secret et la validation humaine du bilan restent à effectuer. La conformité finale n'est pas déclarée acquise à mi-parcours.
 
 Trois acquis : séparer HTTP, métier et données ; faire respecter invariants/droits côté serveur ; vérifier les succès et les refus par des tests reproductibles sur des bases isolées.
