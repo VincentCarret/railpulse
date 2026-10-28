@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tableau de bord · Rail Pulse</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="container page-content">
+    <nav aria-label="Fil d'Ariane" class="mb-4"><a th:href="@{/}">Accueil</a> / <span aria-current="page">Tableau de bord</span></nav>
+    <p class="section-label">SUPERVISION</p>
+    <h1>Incidents actifs</h1>
+    <p class="text-secondary">Situation recalculée à chaque consultation. Horaires en UTC.</p>
+
+    <form class="form-card my-4" method="get" th:action="@{/tableau-de-bord}">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label" for="stationId">Station</label>
+                <select class="form-select" id="stationId" name="stationId">
+                    <option value="">Toutes les stations</option>
+                    <option th:each="station : ${tableau.stations}" th:value="${station.id}" th:text="${station.nom}"
+                            th:selected="${station.id == tableau.stationId}"></option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label" for="priseEnCharge">Prise en charge</label>
+                <select class="form-select" id="priseEnCharge" name="priseEnCharge">
+                    <option th:each="filtre : ${filtresPriseEnCharge}" th:value="${filtre.name()}" th:text="${filtre.libelle}"
+                            th:selected="${filtre == tableau.priseEnCharge}"></option>
+                </select>
+            </div>
+            <div class="col-md-2"><button class="btn btn-success w-100" type="submit">Filtrer</button></div>
+        </div>
+    </form>
+
+    <section class="row g-3 my-4" aria-label="Indicateurs de la sélection">
+        <div class="col-sm-6 col-lg-3"><div class="dashboard-metric"><strong th:text="${tableau.total}">0</strong><span>Incidents actifs</span></div></div>
+        <div class="col-sm-6 col-lg-3"><div class="dashboard-metric"><strong th:text="${tableau.enAttente}">0</strong><span>En attente</span></div></div>
+        <div class="col-sm-6 col-lg-3"><div class="dashboard-metric"><strong th:text="${tableau.prisEnCharge}">0</strong><span>Pris en charge</span></div></div>
+        <div class="col-sm-6 col-lg-3"><div class="dashboard-metric"><strong th:text="${tableau.urgents}">0</strong><span>Urgents (72 h et plus)</span></div></div>
+    </section>
+
+    <p th:if="${#lists.isEmpty(tableau.incidents)}" class="alert alert-info" role="status">Aucun incident actif pour cette sélection.</p>
+    <div th:unless="${#lists.isEmpty(tableau.incidents)}" class="table-responsive table-card" tabindex="0"
+         aria-label="Incidents actifs, défilement horizontal possible">
+        <table class="table align-middle mb-0">
+            <caption class="visually-hidden">Incidents actifs, attention calculée depuis l'heure courante.</caption>
+            <thead><tr><th scope="col">Attention</th><th scope="col">Incident</th><th scope="col">Station</th>
+                <th scope="col">Équipement</th><th scope="col">Description</th><th scope="col">Ouverture (UTC)</th>
+                <th scope="col">Durée</th><th scope="col">Prestataire</th></tr></thead>
+            <tbody>
+            <tr th:each="ligne : ${tableau.incidents}">
+                <td><span class="attention-level" th:attr="data-niveau=${ligne.attention.name()}"
+                          th:text="${ligne.attention.libelle}"></span></td>
+                <th scope="row"><a th:href="@{/incidents/{id}(id=${ligne.incident.id})}" th:text="|#${ligne.incident.id}|"
+                                   th:attr="aria-label=|Consulter le détail de l'incident ${ligne.incident.id}|"></a></th>
+                <td th:text="${ligne.incident.equipement.station.nom}"></td>
+                <td><a th:href="@{/equipements/{id}(id=${ligne.incident.equipement.id})}"
+                       th:text="${ligne.incident.equipement.reference}"></a></td>
+                <td class="incident-description" th:text="${ligne.incident.description}"></td>
+                <td class="text-nowrap" th:text="${#temporals.format(ligne.incident.dateOuverture, 'dd/MM/yyyy HH:mm')}"></td>
+                <td class="text-nowrap" th:text="${ligne.dureeOuverture}"></td>
+                <td th:text="${ligne.incident.prestataire != null ? ligne.incident.prestataire.nom : 'En attente'}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <a class="btn btn-outline-secondary mt-4" th:href="@{/}">Retour à l'accueil</a>
+</main>
+</body>
+</html>
