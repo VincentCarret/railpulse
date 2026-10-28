@@ -50,9 +50,10 @@ public class Evaluation {
     }
 
     public Evaluation(Incident incident, int note, String commentaire, LocalDateTime date) {
-        if (incident == null || incident.getStatut() != StatutIncident.RESOLU || incident.getPrestataire() == null) {
+        if (incident == null) {
             throw new EtatIncidentInvalideException("Seul un incident résolu avec un prestataire peut être évalué.");
         }
+        incident.verifierEvaluable();
         if (note < NOTE_MIN || note > NOTE_MAX) {
             throw new EtatIncidentInvalideException("La note doit être comprise entre 1 et 5.");
         }

@@ -1,6 +1,7 @@
 package altn72.railpulse.service;
 
 import altn72.railpulse.modele.Incident;
+import altn72.railpulse.modele.Evaluation;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
@@ -24,5 +25,9 @@ public class DroitsIncident {
 
     public boolean peutResoudre(Incident incident, Authentication authentication) {
         return estResponsable(authentication) && incident.isModifiable();
+    }
+
+    public boolean peutEvaluer(Incident incident, Evaluation evaluation, Authentication authentication) {
+        return estResponsable(authentication) && incident.isEvaluable() && evaluation == null;
     }
 }

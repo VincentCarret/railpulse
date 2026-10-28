@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|Évaluer l'incident ${incident.id} · Rail Pulse|"></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="container page-content">
+    <nav aria-label="Fil d'Ariane" class="mb-4"><a th:href="@{/}">Accueil</a> /
+        <a th:href="@{/incidents/{id}(id=${incident.id})}" th:text="|Incident #${incident.id}|"></a> / Évaluation</nav>
+    <p class="section-label">SUIVI DES INCIDENTS</p>
+    <h1>Évaluer l'intervention</h1>
+    <p><strong th:text="|Incident #${incident.id}|"></strong> · <span th:text="${incident.equipement.reference}"></span>
+        · <span th:text="${incident.prestataire.nom}"></span></p>
+    <form class="form-card" method="post" th:object="${nouvelleEvaluation}"
+          th:action="@{/incidents/{id}/evaluer(id=${incident.id})}">
+        <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">Aucune évaluation enregistrée. Corrigez les informations ci-dessous.</div>
+        <label class="form-label" for="note">Note (de 1 à 5)</label>
+        <select class="form-select" id="note" th:field="*{note}" th:attr="aria-invalid=${#fields.hasErrors('note')}">
+            <option value="">Choisissez une note</option>
+            <option th:each="valeur : ${#numbers.sequence(noteMin, noteMax)}" th:value="${valeur}" th:text="${valeur}"></option>
+        </select>
+        <p class="text-danger" th:if="${#fields.hasErrors('note')}" th:errors="*{note}"></p>
+        <label class="form-label mt-3" for="commentaire">Commentaire (facultatif)</label>
+        <textarea class="form-control" id="commentaire" rows="5" th:field="*{commentaire}"
+                  th:attr="maxlength=${longueurCommentaireMax},aria-invalid=${#fields.hasErrors('commentaire')}"></textarea>
+        <p class="text-danger" th:if="${#fields.hasErrors('commentaire')}" th:errors="*{commentaire}"></p>
+        <div class="d-flex flex-wrap gap-3 mt-4">
+            <button type="submit" class="btn btn-success">Enregistrer l'évaluation</button>
+            <a class="btn btn-outline-secondary" th:href="@{/incidents/{id}(id=${incident.id})}">Annuler</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

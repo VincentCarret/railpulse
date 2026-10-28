@@ -95,6 +95,16 @@ public class Incident {
         }
     }
 
+    public boolean isEvaluable() {
+        return statut == StatutIncident.RESOLU && prestataire != null;
+    }
+
+    public void verifierEvaluable() {
+        if (!isEvaluable()) {
+            throw new EtatIncidentInvalideException("Seul un incident résolu avec un prestataire peut être évalué.");
+        }
+    }
+
     public boolean isModifiable() {
         return statut != StatutIncident.RESOLU;
     }
