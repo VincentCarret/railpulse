@@ -26,7 +26,7 @@ class RailPulseApplicationTests extends WebIntegrationTestSupport {
             assertEquals(200, get(client, "/js/login.js").statusCode());
             assertTrue(get(client, "/login?error").body().contains("Identifiant ou mot de passe incorrect"));
             assertTrue(get(client, "/login?logout").body().contains("déconnecté avec succès"));
-            HttpResponse<String> protectedPage = get(client, "/programmeurs");
+            HttpResponse<String> protectedPage = get(client, "/stations");
             assertEquals(302, protectedPage.statusCode());
             assertTrue(protectedPage.headers().firstValue("location").orElseThrow().endsWith("/login"));
         }
@@ -91,7 +91,7 @@ class RailPulseApplicationTests extends WebIntegrationTestSupport {
             assertRedirect(post(client, "/logout", Map.of("_csrf", token)), "/login?logout");
             assertTrue(get(client, "/login?logout").body().contains("déconnecté avec succès"));
             assertRedirect(get(client, "/"), "/login");
-            assertRedirect(get(client, "/programmeurs"), "/login");
+            assertRedirect(get(client, "/stations"), "/login");
             HttpResponse<String> reused = replay.send(HttpRequest.newBuilder(uri("/"))
                     .header("Cookie", "JSESSIONID=" + session).GET().build(), HttpResponse.BodyHandlers.ofString());
             assertRedirect(reused, "/login");
@@ -111,30 +111,22 @@ class RailPulseApplicationTests extends WebIntegrationTestSupport {
 
     @Test
     void everyPrivatePageShowsTheUserAndItsLogoutFormWorksForBothProfiles() throws Exception {
-        Programmeur programmeur = new Programmeur();
-        programmeur.setNom("Test");
-        programmeur.setPrenom("Exemple");
-        programmeur = programmeurs.save(programmeur);
-        try {
-            for (Profil profil : Profil.values()) {
-                User user = createUser(profil, passwords.encode(PASSWORD));
-                for (String path : List.of("/", "/programmeurs", "/programmeurs/nouveau", "/programmeurs/" + programmeur.getId())) {
-                    try (HttpClient client = browser()) {
-                        assertRedirect(get(client, path), "/login");
-                        assertRedirect(login(client, user.getLogin(), PASSWORD), "/");
-                        HttpResponse<String> page = get(client, path);
-                        assertEquals(200, page.statusCode(), path);
-                        assertTrue(page.body().contains("Bonjour Camille (" + profil.name() + ")"), path);
-                        assertTrue(page.body().contains("Déconnectez-vous"), path);
-                        assertTrue(page.body().contains("action=\"/logout\""), path);
-                        assertEquals(200, get(client, "/css/style.css").statusCode());
-                        assertRedirect(post(client, "/logout", Map.of("_csrf", csrf(page.body()))), "/login?logout");
-                        assertRedirect(get(client, path), "/login");
-                    }
+        for (Profil profil : Profil.values()) {
+            User user = createUser(profil, passwords.encode(PASSWORD));
+            for (String path : List.of("/", "/stations", "/incidents/historique")) {
+                try (HttpClient client = browser()) {
+                    assertRedirect(get(client, path), "/login");
+                    assertRedirect(login(client, user.getLogin(), PASSWORD), "/");
+                    HttpResponse<String> page = get(client, path);
+                    assertEquals(200, page.statusCode(), path);
+                    assertTrue(page.body().contains("Bonjour Camille (" + profil.name() + ")"), path);
+                    assertTrue(page.body().contains("Déconnectez-vous"), path);
+                    assertTrue(page.body().contains("action=\"/logout\""), path);
+                    assertEquals(200, get(client, "/css/style.css").statusCode());
+                    assertRedirect(post(client, "/logout", Map.of("_csrf", csrf(page.body()))), "/login?logout");
+                    assertRedirect(get(client, path), "/login");
                 }
             }
-        } finally {
-            programmeurs.delete(programmeur);
         }
     }
 

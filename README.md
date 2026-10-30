@@ -88,8 +88,6 @@ Le `.env` n'est pas chargé automatiquement par Spring. Le script local ne lit q
 Les tests locaux utilisent des bases H2 temporaires. `verify` produit le JAR, `target/site/jacoco/index.html` et les rapports dans `target/surefire-reports/`.
 La CI exécute les mêmes tests sous Java 21 avec H2 et un vrai PostgreSQL temporaire, dans des schémas séparés par contexte de test. Aucune connexion Supabase n'est requise. Ne pas renseigner une base contenant des données à conserver dans `TEST_DB_URL` : les tests utilisent `create-drop`.
 
-Le CRUD de programmeurs reste un exemple isolé du TP ; il n'est pas compté comme fonctionnalité Rail Pulse. Son repository contient une requête dérivée réellement utilisée pour le tri de la liste.
-
 ## Déploiement et limites
 
 Application : https://railpulse-23pc.onrender.com à [procédure Render](docs/render.md).

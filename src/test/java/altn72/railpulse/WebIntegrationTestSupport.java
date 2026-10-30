@@ -1,7 +1,6 @@
 package altn72.railpulse;
 
 import altn72.railpulse.modele.*;
-import altn72.railpulse.service.ProgrammeurService;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,31 +36,12 @@ abstract class WebIntegrationTestSupport {
     @Autowired
     protected PasswordEncoder passwords;
 
-    @Autowired
-    protected ProgrammeurRepository programmeurs;
-
-    @Autowired
-    protected ProgrammeurService programmeurService;
-
-    protected final List<Programmeur> testProgrammeurs = new ArrayList<>();
-
     @Value("${local.server.port}")
     protected int port;
 
     @AfterEach
     void removeTestUsers() {
-        programmeurs.deleteAll(testProgrammeurs);
         users.deleteAll(testUsers);
-    }
-
-
-    protected Programmeur createProgrammeur(String nom, String prenom) {
-        Programmeur programmeur = new Programmeur();
-        programmeur.setNom(nom);
-        programmeur.setPrenom(prenom);
-        Programmeur saved = programmeurs.save(programmeur);
-        testProgrammeurs.add(saved);
-        return saved;
     }
 
     protected HttpClient authenticatedBrowser() throws Exception {

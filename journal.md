@@ -1,6 +1,6 @@
 # Journal à Rail Pulse (ALTN72, 2026-2027)
 
-**Groupe : Amir Nassiri et Vincent Carret.** état au 28 octobre 2026, périmètre F1 à F12 sur cette branche.
+**Groupe : Amir Nassiri et Vincent Carret.** état au 30 octobre 2026, périmètre F1 à F12 sur cette branche.
 
 ## README
 
@@ -29,7 +29,6 @@ Navigateur -> Controleurs MVC -> Services -> Repositories JPA -> Base relationne
 - `SecurityConfig` protège les routes et active les autorisations sur les méthodes sensibles. `GlobalExceptionHandler` traduit les erreurs attendues vers les bons statuts et masque les détails internes.
 - F2/F3 chargent station et incidents avec les relations utiles au rendu ; F5 charge équipement/station/prestataire et l'évaluation éventuelle. Les vues n'interrogent pas la base.
 - `ExportCatalogueService` transforme une projection SQL en CSV ; son contrôleur ne contient ni SQL ni logique d'échappement.
-- Le CRUD de programmeurs est un exemple hérité du TP, conservé pour compatibilité et séparé du socle Rail Pulse. Il ne compte ni comme F1–F12 ni comme lot alpha.
 
 ## TESTS
 
@@ -54,7 +53,7 @@ Les tests HTTP lancent un vrai serveur sur port aléatoire et manipulent cookies
 | Démonstration | Création transactionnelle des deux comptes, secrets absents refusés, profils préexistants protégés, connexion réelle, catalogue varié et relancement sans duplication. |
 | Export CSV | Droits des deux profils, format/encodage/en-têtes, catalogue vide, guillemets/séparateurs/retours ligne et neutralisation des formules. |
 
-Vérification locale avec F12 : **108 tests réussis, aucun échec ni erreur**, JAR et rapport JaCoCo générés (JDK 21.0.2).
+Vérification locale après retrait du module hors sujet : **98 tests réussis, aucun échec ni erreur** avec `clean verify`, JAR et rapport JaCoCo générés (JDK 21.0.2). Le JAR ne contient plus les classes ni les vues de ce module.
 Le JAR a aussi été démarré sans configuration de test sur une base H2 fichier neuve : connexion des deux comptes, F2/F3, déclaration F4, détail F5, refus d'édition agent, correction responsable, CSV et déconnexion vérifiés par HTTP. Cette instance temporaire a été arrêtée.
 
 La CI exécute deux jobs Java 21 : H2 et PostgreSQL 17 temporaire. **75 tests réussis sur chacun des deux moteurs**, sans échec ni erreur, dans l'[exécution de référence](https://github.com/VincentCarret/railpulse/actions/runs/40544261917). Les quatre contextes utilisent PostgreSQL sans repli H2, avec des schémas isolés. Les rapports et le JAR sont conservés comme artifacts ; les nouveaux passages sont visibles dans Actions.
@@ -109,7 +108,7 @@ F6 ne modifie que la description d'un incident actif : les identifiants, dates, 
 
 ### Persistance et unique requête SQL native (à7.6)
 
-Tous les repositories actifs déclarent une requête utile. Les requêtes dérivées (utilisateurs, stations, évaluations, tri du TP) complètent les JPQL (catalogue, détails, historique d'équipement et verrouillage).
+Tous les repositories actifs déclarent une requête utile. Les requêtes dérivées (utilisateurs, stations, prestataires, évaluations) complètent les JPQL (catalogue, détails, historique d'équipement et verrouillage).
 
 L'unique requête native de `src/main/java` se trouve dans `EquipementRepository.exporterCatalogue`. Elle joint équipements et stations et renvoie uniquement les cinq colonnes du CSV, déjà triées, au lieu d'hydrater des entités et d'accéder à des associations par ligne.
 
@@ -125,7 +124,6 @@ Référence : [Hibernate à schémas des requêtes natives](https://docs.hiberna
 - Initialisations : catalogue complet et deux comptes créés chacun dans leur transaction, avec rollback si une condition échoue. Un compte existant n'est ni réaffecté ni écrasé.
 - Migration BCrypt : une transaction pour les comptes à migrer ; format historique inconnu/vide = rollback complet et démarrage refusé. Aucun secret n'est journalisé.
 - Export : transaction de lecture pour extraire une vue cohérente du catalogue.
-- Le CRUD TP conserve ses transactions existantes ; les modifications d'entités gérées utilisent le dirty checking.
 
 ### Sécurité et configuration
 
