@@ -1,6 +1,5 @@
 package altn72.railpulse.controleur;
 
-import altn72.railpulse.service.exception.ProgrammeurIntrouvableException;
 import altn72.railpulse.service.exception.StationIntrouvableException;
 import altn72.railpulse.service.exception.EquipementIntrouvableException;
 import altn72.railpulse.service.exception.EtatIncidentInvalideException;
@@ -28,12 +27,6 @@ public class GlobalExceptionHandler {
 
     public GlobalExceptionHandler(GlobalUserControllerAdvice userContext) {
         this.userContext = userContext;
-    }
-
-    @ExceptionHandler(ProgrammeurIntrouvableException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String introuvable(ProgrammeurIntrouvableException exception, Model model) {
-        return erreur(model, 404, exception.getMessage());
     }
 
     @ExceptionHandler(StationIntrouvableException.class)

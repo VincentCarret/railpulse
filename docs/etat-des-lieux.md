@@ -1,7 +1,7 @@
-# État des lieux — branche F12
+# État des lieux — correction des restes hors sujet
 
-**Rail Pulse — Amir Nassiri et Vincent Carret — 28 octobre 2026.**
-Ce document décrit l'état du code sur `feature/f12-api-rest-documentee`. Il ne déclare pas le déploiement ni le rendu final validés.
+**Rail Pulse — Amir Nassiri et Vincent Carret — 30 octobre 2026.**
+Ce document décrit l'état du code sur `correction-reste-tp5`, à partir de `master` intégrant F12. Il ne déclare pas le déploiement ni le rendu final validés.
 
 ## Socle fonctionnel
 
@@ -18,7 +18,7 @@ Ce document décrit l'état du code sur `feature/f12-api-rest-documentee`. Il ne
 | F9 | Réalisée | Historique global des seuls incidents résolus, tri par résolution décroissante et liens vers les détails. |
 | F10 | Réalisée | Saisie d'une note de 1 à 5 et d'un commentaire facultatif après résolution avec prestataire ; unicité et date serveur. |
 | F11 | Réalisée | Incidents actifs uniquement, indicateurs vert/orange/rouge à 48/72 h calculés à l'heure courante, affectés distincts, filtres et synthèse. |
-| F12 | Réalisée sur la branche dédiée | Liste et détail JSON des incidents, résolution protégée et document OpenAPI 3. |
+| F12 | Réalisée | Liste et détail JSON des incidents, résolution protégée et document OpenAPI 3. |
 
 ## écarts de l'audit corrigés
 
@@ -26,7 +26,6 @@ Ce document décrit l'état du code sur `feature/f12-api-rest-documentee`. Il ne
 |---|---|
 | Secret MySQL dans le code | Fallback supprimé ; variable d'environnement requise. La configuration locale est préservée uniquement hors Git. |
 | Acceptation de mots de passe en clair | Encoder limité à BCrypt, validation du modèle User, migration transactionnelle préalable ; plus de `{noop}` dans la connexion. |
-| Repository TP vide | Requête dérivée de tri réellement utilisée, avec test d'ordre. |
 | Initialisation incomplète | Deux comptes demo créés avec secrets d'environnement, sans écrasement ; script autonome et catalogue complet sur base neuve. |
 | Une seule piste alpha | Qualité renforcée (piste 7) et export CSV du catalogue (piste 9). |
 | SQL natif absent | Une seule requête native de l'application pour la projection CSV, avec analyse critique dans le journal. |
@@ -35,7 +34,7 @@ Ce document décrit l'état du code sur `feature/f12-api-rest-documentee`. Il ne
 
 ## Preuves de vérification
 
-- `mvnw verify` local avec F12 : **108 tests, 0 échec, 0 erreur**, JAR et JaCoCo générés.
+- `mvnw clean verify` local après nettoyage : **98 tests, 0 échec, 0 erreur**, JAR et JaCoCo générés. Les classes et vues hors sujet sont absentes du JAR.
 - JAR autonome lancé avec une base H2 fichier neuve, sans configuration de test : connexion des deux comptes, F2/F3, F4, détail F5, refus d'édition agent, correction responsable, CSV et déconnexion vérifiés par HTTP. Instance de vérification arrêtée.
 - CI Java 21 : **75 tests réussis sur H2 et 75 sur PostgreSQL 17**, aucun échec ni erreur. Les quatre contextes PostgreSQL utilisent ce moteur sans repli H2. [Exécution de référence](https://github.com/VincentCarret/railpulse/actions/runs/40544261917), résultats et rapports attachés à la PR. Aucun secret de production ni accès Supabase nécessaire.
 - `.env` et ses variantes sont ignorés. `.env.example` contient seulement des champs vides ou factices. Les bases locales et secrets sont aussi exclus du contexte Docker.
@@ -48,10 +47,10 @@ Le schéma et les données peuvent être reconstruits à partir des entités et 
 
 ## Actions restantes
 
-1. Relire et intégrer la PR, importer le `.env` mis à jour dans Render avant d'activer `demo`, puis déployer et contrôler les deux profils.
+1. Importer le `.env` mis à jour dans Render avant d'activer `demo`, puis déployer et contrôler les deux profils.
 2. Si l'ancien secret présent dans l'historique Git est encore utilisé, le renouveler ; l'historique n'a pas été réécrit.
 3. Faire valider par les deux membres leurs contributions réelles et leur difficulté principale ; seules les traces Git sont attestées dans le bilan.
-4. Faire relire et intégrer la branche F12, puis vérifier ses parcours sur le déploiement.
+4. Faire relire et intégrer `correction-reste-tp5`, puis vérifier F12 sur le déploiement.
 5. Réaliser les contrôles de copie propre, rendu navigateur et maîtrise orale prévus par le sujet avant le rendu final.
 
-Les douze fonctionnalités sont présentes sur la branche F12. Les deux alpha et les fondations techniques sont vérifiables ; le rendu final et le déploiement demandent encore une validation distincte.
+Les douze fonctionnalités sont présentes sur cette branche. Les deux alpha et les fondations techniques sont vérifiables ; le rendu final et le déploiement demandent encore une validation distincte.
