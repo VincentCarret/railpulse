@@ -32,7 +32,7 @@ La migration de sécurité convertit les anciennes valeurs en clair et `{noop}` 
 
 ## Contrôle après mise en ligne
 
-Le 30 octobre 2026, l'URL `/login` n'a renvoyé aucun octet pendant 90 secondes. Avant de considérer le service comme livré, ouvrir le tableau de bord Render : vérifier que le service existe et est actif, que le dernier commit de `master` a été déployé, puis consulter les événements et logs de démarrage. Contrôler la connexion PostgreSQL et les variables du tableau ci-dessus sans copier leurs valeurs dans Git. Une réponse HTTP 200 sur `/login` depuis un autre réseau est le premier contrôle de disponibilité.
+Le 30 octobre 2026, l'URL `/login` a expiré après 90 secondes, puis Render a répondu **502 Bad Gateway** avec l'en-tête `x-render-routing: no-deploy`. Avant de considérer le service comme livré, ouvrir le tableau de bord Render : vérifier que le service existe et est actif, que le dernier commit de `master` a été déployé, puis consulter les événements et logs de démarrage. Contrôler la connexion PostgreSQL et les variables du tableau ci-dessus sans copier leurs valeurs dans Git. Une réponse HTTP 200 sur `/login` depuis un autre réseau est le premier contrôle de disponibilité.
 
 1. Vérifier le dernier commit déployé et les logs de démarrage, sans recopier de secrets.
 2. Ouvrir https://railpulse-23pc.onrender.com/login.

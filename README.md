@@ -90,7 +90,7 @@ La CI exécute les mêmes tests sous Java 21 avec H2 et un vrai PostgreSQL tempo
 
 ## Déploiement et limites
 
-URL de déploiement prévue : https://railpulse-23pc.onrender.com ; elle n'a pas répondu lors du contrôle du 30 octobre 2026. Voir la [procédure Render](docs/render.md) pour rétablir et vérifier le service.
+URL de déploiement prévue : https://railpulse-23pc.onrender.com ; le 30 octobre 2026, Render répondait **502 Bad Gateway** avec `x-render-routing: no-deploy`. Voir la [procédure Render](docs/render.md) pour rétablir et vérifier le service.
 Le Dockerfile construit et teste avec Java 21. Les variables de base et de démonstration doivent être configurées sur Render avant d'y déployer les correctifs. Le déploiement peut attendre les deux jobs CI via **Auto-Deploy à After CI Checks Pass**.
 
 `ddl-auto=update` et l'initialisation applicative conviennent au projet pédagogique ; des migrations de schéma versionnées restent une amélioration pour une exploitation durable.

@@ -39,7 +39,7 @@ Ce document décrit l'état de `master` après l'intégration de F12 et le netto
 - JAR autonome lancé avec une base H2 fichier neuve, sans configuration de test : connexion des deux comptes, F2/F3, F4, détail F5, refus d'édition agent, correction responsable, CSV et déconnexion vérifiés par HTTP. Instance de vérification arrêtée.
 - CI Java 21 : les jobs H2 et PostgreSQL 17 réussissent sur le [dernier commit de nettoyage](https://github.com/VincentCarret/railpulse/actions/runs/41032371010). Les contextes PostgreSQL utilisent ce moteur sans repli H2. Aucun secret de production ni accès Supabase nécessaire.
 - `.env` et ses variantes sont ignorés. `.env.example` contient seulement des champs vides ou factices. Les bases locales et secrets sont aussi exclus du contexte Docker.
-- La page publique Render a répondu HTTP 200 lors d'un audit antérieur, mais `/login` n'a renvoyé aucun octet en 90 secondes le 30 octobre 2026. Le déploiement et les parcours authentifiés restent à rétablir et vérifier.
+- La page publique Render a répondu HTTP 200 lors d'un audit antérieur. Le 30 octobre 2026, `/login` a expiré après 90 secondes puis répondu **502 Bad Gateway** avec `x-render-routing: no-deploy`. Le déploiement et les parcours authentifiés restent à rétablir et vérifier.
 
 ## Exigences transverses
 
