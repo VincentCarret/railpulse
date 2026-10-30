@@ -6,11 +6,11 @@
 
 Le [README](README.md) contient les prérequis Java 21, les commandes Maven et le lancement autonome sur H2 avec `scripts/demarrer-demo.ps1`. Une base neuve initialise le catalogue et les deux profils ; une base existante est conservée.
 
-- Application : https://railpulse-23pc.onrender.com ; formulaire de connexion vérifié HTTP 200 lors de l'audit. La présence en ligne ne prouve pas à elle seule la version du code ni tous les parcours authentifiés.
+- Application prévue : https://railpulse-23pc.onrender.com. Le 30 octobre 2026, `/login` a d'abord expiré après 90 secondes, puis Render a répondu **502 Bad Gateway** avec `x-render-routing: no-deploy` ; aucun déploiement actif n'était routé à cette adresse lors du second contrôle.
 - Comptes : `demo.agent` / `RAILPULSE_DEMO_AGENT_PASSWORD` et `demo.responsable` / `RAILPULSE_DEMO_RESPONSABLE_PASSWORD`. L'évaluateur définit ses propres mots de passe au lancement ; ils sont hachés avant insertion et ne sont pas versionnés.
 - Base locale : H2 relationnelle dans `.data/`, ignorée par Git. PostgreSQL/Supabase pour Render, MySQL disponible en profil explicite. Le script local force H2 pour protéger les bases distantes d'une configuration héritée.
 - Initialisation : JPA pour le schéma, `ComptesDemonstrationAuDemarrage` et `DonneesDemonstration` pour les données. Migration BCrypt préalable. Les initialisations sont transactionnelles et idempotentes ; aucun écrasement de compte/catalogue existant.
-- Limites : le déploiement Render de cette branche reste à vérifier. `ddl-auto=update` est un choix pédagogique, pas une stratégie de migration de schéma de production.
+- Limites : aucun déploiement actif n'était routé par Render lors du dernier contrôle. `ddl-auto=update` est un choix pédagogique, pas une stratégie de migration de schéma de production.
 
 ## ARCHITECTURE
 
@@ -54,9 +54,10 @@ Les tests HTTP lancent un vrai serveur sur port aléatoire et manipulent cookies
 | Export CSV | Droits des deux profils, format/encodage/en-têtes, catalogue vide, guillemets/séparateurs/retours ligne et neutralisation des formules. |
 
 Vérification locale après retrait du module hors sujet : **98 tests réussis, aucun échec ni erreur** avec `clean verify`, JAR et rapport JaCoCo générés (JDK 21.0.2). Le JAR ne contient plus les classes ni les vues de ce module.
+Une copie propre de `master` (`ba9ff69`) a été clonée dans un nouveau dossier le 30 octobre 2026 : `mvnw clean verify` y a réussi avec **98 tests, 0 échec, 0 erreur**. Le JAR issu de cette copie a démarré sur une base H2 fichier neuve avec les profils `demo-local,demo` et deux secrets temporaires ; `/login` a répondu 200 et `/api/incidents` a redirigé le visiteur vers `/login` (302). L'instance de contrôle a ensuite été arrêtée.
 Le JAR a aussi été démarré sans configuration de test sur une base H2 fichier neuve : connexion des deux comptes, F2/F3, déclaration F4, détail F5, refus d'édition agent, correction responsable, CSV et déconnexion vérifiés par HTTP. Cette instance temporaire a été arrêtée.
 
-La CI exécute deux jobs Java 21 : H2 et PostgreSQL 17 temporaire. **75 tests réussis sur chacun des deux moteurs**, sans échec ni erreur, dans l'[exécution de référence](https://github.com/VincentCarret/railpulse/actions/runs/40544261917). Les quatre contextes utilisent PostgreSQL sans repli H2, avec des schémas isolés. Les rapports et le JAR sont conservés comme artifacts ; les nouveaux passages sont visibles dans Actions.
+La CI exécute deux jobs Java 21 : H2 et PostgreSQL 17 temporaire. Les deux jobs ont réussi sur le dernier commit de nettoyage dans l'[exécution du 30 octobre 2026](https://github.com/VincentCarret/railpulse/actions/runs/41032371010). Les contextes PostgreSQL utilisent ce moteur sans repli H2, avec des schémas isolés. Les rapports et le JAR sont conservés comme artifacts ; les nouveaux passages sont visibles dans Actions.
 
 La couverture JaCoCo est une mesure d'exécution, pas une preuve complète de conformité. Le rendu visuel, l'accessibilité complète, la charge, l'environnement Supabase réel et la compréhension orale restent des contrôles distincts. Les tests F11 vérifient les frontières exactes de 48/72 h et le recalcul de l'attention ; les tests F12 exercent de vrais échanges HTTP et leurs refus.
 
@@ -159,12 +160,12 @@ Ces deux choix appartiennent aux pistes proposées au à6. La sécurité F1 et C
 
 | Membre | Traces techniques observables dans Git |
 |---|---|
-| Amir Nassiri | Contribution initiale CI/CD et déploiement VPS, commit `58646e2` signé `amirnssr`. |
-| Vincent Carret | Configuration, intégration des branches, puis commits F2–F6, tests et documentation sous `vincent` / `vincent.carret`. |
+| Amir Nassiri | CI/CD initiale (`58646e2`), commits F7–F12 (`6a19d20` à `6208ce2`), retrait des restes hors sujet (`98ad467`) et intégration des PR #10 à #16 sous `amirnssr` / `Amir N`. |
+| Vincent Carret | Authentification, configurations MySQL/Supabase, F2–F6 (`6f2c7c7` à `934b827`), déploiement Docker/Render, correctifs de conformité (`9f6c64b`), tests, documentation et intégration des premières PR sous `vincent` / `vincent.carret` / `Vins`. |
 
-Les noms du groupe ont été fournis par les membres. Cette table décrit l'historique, pas une mesure de temps ni une répartition complète du travail hors Git. Chaque membre doit compléter/valider sa contribution réelle et savoir expliquer la solution. L'assistance Codex pour le code, les tests et les revues est déclarée ; elle ne prouve pas la maîtrise orale du groupe.
+Les noms du groupe ont été fournis par les membres. Cette table décrit l'historique, pas une mesure de temps ni une répartition complète du travail hors Git. Chaque membre doit valider sa contribution réelle et savoir expliquer la solution. L'assistance Codex pour le code, les tests et les revues est déclarée ; elle ne prouve pas la maîtrise orale du groupe.
 
-PR déjà intégrées : F1/CI (#1à#2), F2 (#3), Render (#4), F3 (#5), F4 (#6), F5 (#7), F6 (#8). Les corrections de conformité sont isolées sur `fix/conformite-mi-parcours`, avec PR de revue.
+Les PR F7–F12 (#10 à #15) et le retrait des restes hors sujet (#16) sont intégrés à `master`. La présente mise à jour documentaire reste sur une branche distincte jusqu'à sa revue.
 
 ### Difficultés techniques observées
 
@@ -172,10 +173,10 @@ PR déjà intégrées : F1/CI (#1à#2), F2 (#3), Render (#4), F3 (#5), F4 (#6), 
 - Une valeur de secours MySQL et l'absence de comptes reproductibles empêchaient une configuration sûre : secrets hors Git, comptes paramétrés et script autonome H2.
 - Une CI annonçait MySQL alors que les tests forçaient H2 : correction des propriétés de tous les contextes et ajout d'un vrai job PostgreSQL avec schémas isolés.
 
-Ces difficultés sont attestées par les corrections ; le groupe doit préciser laquelle il considère comme sa difficulté principale.
+La difficulté technique principale documentée par l'historique est la reproductibilité des tests sur deux moteurs relationnels. Une CI annonçait MySQL alors que les tests utilisaient H2 ; le groupe a supprimé cette ambiguïté en paramétrant tous les contextes de test et en ajoutant un job PostgreSQL réel avec des schémas isolés. Les deux jobs réussissent désormais sur le dernier commit vérifié. Le groupe doit confirmer que ce choix reflète bien son expérience lors de la soutenance.
 
 ### Reste à faire
 
-Les démonstrations navigateur sur Render, la rotation éventuelle d'un ancien secret et la validation humaine du bilan restent à effectuer. La présence de F1 à F12 dans le code ne prouve pas encore la conformité finale du déploiement ni du rendu.
+Les fonctionnalités F1 à F12 et les deux fonctionnalités du lot alpha sont présentes dans `master` ; aucune fonctionnalité obligatoire du socle n'est identifiée comme non réalisée. Les parcours authentifiés sur Render, l'accessibilité publique, la rotation éventuelle d'un ancien secret et la validation humaine du bilan restent à effectuer. La copie propre et la CI réussies ne prouvent pas à elles seules la conformité finale du déploiement ni du rendu.
 
 Trois acquis : séparer HTTP, métier et données ; faire respecter invariants/droits côté serveur ; vérifier les succès et les refus par des tests reproductibles sur des bases isolées.

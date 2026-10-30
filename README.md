@@ -3,7 +3,7 @@
 Projet ALTN72 2026-2027 — **Amir Nassiri et Vincent Carret**.
 Application Java 21 / Spring Boot 4.1.1, Maven, Thymeleaf et JPA. PostgreSQL/Supabase pour le déploiement ; H2 pour la démonstration autonome et les tests rapides.
 
-F1 à F12 sont réalisées sur cette branche. Le [journal](journal.md) justifie les choix et le [bilan de conformité](docs/etat-des-lieux.md) distingue le réalisé du reste à faire.
+F1 à F12 sont réalisées sur `master`. Le [journal](journal.md) justifie les choix et le [bilan de conformité](docs/etat-des-lieux.md) distingue le réalisé du reste à faire.
 
 ## Démarrer depuis un clone propre sous Windows
 
@@ -90,7 +90,7 @@ La CI exécute les mêmes tests sous Java 21 avec H2 et un vrai PostgreSQL tempo
 
 ## Déploiement et limites
 
-Application : https://railpulse-23pc.onrender.com à [procédure Render](docs/render.md).
+URL de déploiement prévue : https://railpulse-23pc.onrender.com ; le 30 octobre 2026, Render répondait **502 Bad Gateway** avec `x-render-routing: no-deploy`. Voir la [procédure Render](docs/render.md) pour rétablir et vérifier le service.
 Le Dockerfile construit et teste avec Java 21. Les variables de base et de démonstration doivent être configurées sur Render avant d'y déployer les correctifs. Le déploiement peut attendre les deux jobs CI via **Auto-Deploy à After CI Checks Pass**.
 
 `ddl-auto=update` et l'initialisation applicative conviennent au projet pédagogique ; des migrations de schéma versionnées restent une amélioration pour une exploitation durable.

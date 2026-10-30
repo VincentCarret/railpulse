@@ -1,7 +1,7 @@
-# État des lieux — correction des restes hors sujet
+# État des lieux — avant livraison
 
 **Rail Pulse — Amir Nassiri et Vincent Carret — 30 octobre 2026.**
-Ce document décrit l'état du code sur `correction-reste-tp5`, à partir de `master` intégrant F12. Il ne déclare pas le déploiement ni le rendu final validés.
+Ce document décrit l'état de `master` après l'intégration de F12 et le nettoyage hors sujet. Il ne déclare pas le déploiement ni le rendu final validés.
 
 ## Socle fonctionnel
 
@@ -35,10 +35,11 @@ Ce document décrit l'état du code sur `correction-reste-tp5`, à partir de `ma
 ## Preuves de vérification
 
 - `mvnw clean verify` local après nettoyage : **98 tests, 0 échec, 0 erreur**, JAR et JaCoCo générés. Les classes et vues hors sujet sont absentes du JAR.
+- Copie propre de `master` clonée le 30 octobre 2026 : `mvnw clean verify` y réussit également avec **98 tests, 0 échec, 0 erreur**. Le JAR démarre avec H2 et des secrets de démonstration temporaires ; `/login` répond 200 et l'API protégée redirige un visiteur vers `/login` (302).
 - JAR autonome lancé avec une base H2 fichier neuve, sans configuration de test : connexion des deux comptes, F2/F3, F4, détail F5, refus d'édition agent, correction responsable, CSV et déconnexion vérifiés par HTTP. Instance de vérification arrêtée.
-- CI Java 21 : **75 tests réussis sur H2 et 75 sur PostgreSQL 17**, aucun échec ni erreur. Les quatre contextes PostgreSQL utilisent ce moteur sans repli H2. [Exécution de référence](https://github.com/VincentCarret/railpulse/actions/runs/40544261917), résultats et rapports attachés à la PR. Aucun secret de production ni accès Supabase nécessaire.
+- CI Java 21 : les jobs H2 et PostgreSQL 17 réussissent sur le [dernier commit de nettoyage](https://github.com/VincentCarret/railpulse/actions/runs/41032371010). Les contextes PostgreSQL utilisent ce moteur sans repli H2. Aucun secret de production ni accès Supabase nécessaire.
 - `.env` et ses variantes sont ignorés. `.env.example` contient seulement des champs vides ou factices. Les bases locales et secrets sont aussi exclus du contexte Docker.
-- La page publique Render a répondu HTTP 200 lors d'un audit antérieur, mais elle n'a pas répondu lors du contrôle du 28 octobre 2026. Le déploiement et les parcours authentifiés de cette branche restent à vérifier.
+- La page publique Render a répondu HTTP 200 lors d'un audit antérieur. Le 30 octobre 2026, `/login` a expiré après 90 secondes puis répondu **502 Bad Gateway** avec `x-render-routing: no-deploy`. Le déploiement et les parcours authentifiés restent à rétablir et vérifier.
 
 ## Exigences transverses
 
@@ -50,7 +51,7 @@ Le schéma et les données peuvent être reconstruits à partir des entités et 
 1. Importer le `.env` mis à jour dans Render avant d'activer `demo`, puis déployer et contrôler les deux profils.
 2. Si l'ancien secret présent dans l'historique Git est encore utilisé, le renouveler ; l'historique n'a pas été réécrit.
 3. Faire valider par les deux membres leurs contributions réelles et leur difficulté principale ; seules les traces Git sont attestées dans le bilan.
-4. Faire relire et intégrer `correction-reste-tp5`, puis vérifier F12 sur le déploiement.
-5. Réaliser les contrôles de copie propre, rendu navigateur et maîtrise orale prévus par le sujet avant le rendu final.
+4. Faire relire et intégrer la mise à jour du journal, puis vérifier F12 sur le déploiement.
+5. Réaliser les contrôles de rendu navigateur et de maîtrise orale prévus par le sujet avant le rendu final.
 
-Les douze fonctionnalités sont présentes sur cette branche. Les deux alpha et les fondations techniques sont vérifiables ; le rendu final et le déploiement demandent encore une validation distincte.
+Les douze fonctionnalités sont présentes sur `master`. Les deux alpha et les fondations techniques sont vérifiables ; le rendu final et le déploiement demandent encore une validation distincte.
