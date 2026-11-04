@@ -4,12 +4,17 @@ import altn72.railpulse.modele.Equipement;
 import altn72.railpulse.modele.Incident;
 import altn72.railpulse.modele.Prestataire;
 import altn72.railpulse.modele.StatutIncident;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
 public record IncidentApiResponse(Long id, String description, StatutIncident statut,
-                                  String dateOuverture, String dateResolution,
-                                  EquipementInfo equipement, PrestataireInfo prestataire) {
+                                  @Schema(format = "date-time", example = "2026-10-27T12:00Z")
+                                  String dateOuverture,
+                                  @Schema(format = "date-time", nullable = true)
+                                  String dateResolution,
+                                  EquipementInfo equipement,
+                                  @Schema(nullable = true) PrestataireInfo prestataire) {
 
     public static IncidentApiResponse depuis(Incident incident) {
         Equipement equipement = incident.getEquipement();

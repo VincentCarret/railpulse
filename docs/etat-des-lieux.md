@@ -25,7 +25,8 @@ Ce document décrit l'état de `master` après l'intégration de F12 et le netto
 | Point du sujet | Correction |
 |---|---|
 | Secret MySQL dans le code | Fallback supprimé, puis profil `mysql` du TP5 retiré avec son pilote et son démarrage automatique du service Windows. |
-| Fichiers d'IDE versionnés | `.idea/` retiré du dépôt et ignoré ; lancements documentés par commandes Maven dans le README. |
+| Fichiers parasites versionnés | `.idea/` et `HELP.md` (généré par Spring Initializr) retirés ; `.idea/`, `*.iml`, `.vscode/`, `target/` ignorés ; lancements documentés par commandes Maven dans le README. |
+| Documentation OpenAPI/Swagger | YAML manuel remplacé par springdoc-openapi : Swagger UI sur `/api/swagger-ui.html`, spécification générée depuis le code, protégée par la connexion. |
 | Acceptation de mots de passe en clair | Encoder limité à BCrypt, validation du modèle User, migration transactionnelle préalable ; plus de `{noop}` dans la connexion. |
 | Initialisation incomplète | Deux comptes demo créés avec secrets d'environnement, sans écrasement ; script autonome et catalogue complet sur base neuve. |
 | Une seule piste alpha | Qualité renforcée (piste 7) et export CSV du catalogue (piste 9). |

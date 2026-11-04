@@ -68,7 +68,7 @@ Les erreurs conservent la saisie sans écriture ; identifiant mal formé 400, re
 
 ### API REST et OpenAPI
 
-La [spécification OpenAPI 3](src/main/resources/static/api/openapi.yaml) est disponible à `/api/openapi.yaml` après connexion. Elle décrit les réponses JSON, les statuts HTTP et l'authentification par session. Une requête non connectée est redirigée vers `/login`. Pour l'écriture, récupérer le jeton avec `GET /api/csrf` puis le transmettre dans l'en-tête `X-CSRF-TOKEN` du `POST`. Aucun client ne fournit la date de résolution.
+La documentation est générée depuis le code par springdoc-openapi (annotations du contrôleur [IncidentApiControleur](src/main/java/altn72/railpulse/controleur/api/IncidentApiControleur.java)), elle ne peut donc pas diverger de l'implémentation. Après connexion : **Swagger UI** sur `/api/swagger-ui.html`, spécification OpenAPI 3.1 sur `/api/openapi` (JSON) et `/api/openapi.yaml`. Elle décrit les réponses JSON, les statuts HTTP et l'authentification par session. Une requête non connectée est redirigée vers `/login`. Pour l'écriture, récupérer le jeton avec `GET /api/csrf` puis le transmettre dans l'en-tête `X-CSRF-TOKEN` du `POST` (dans Swagger UI : bouton « Authorize », schéma `csrf`). Aucun client ne fournit la date de résolution.
 
 ```text
 GET  /api/incidents

@@ -39,7 +39,7 @@ Le 30 octobre 2026, l'URL `/login` a expiré après 90 secondes, puis Render a r
 3. Tester `demo.agent` et `demo.responsable` avec leurs secrets fournis dans Render.
 4. Vérifier station, équipement, déclaration, détail, modification responsable et refus agent.
 5. Télécharger le CSV ; se déconnecter puis tenter une page privée.
-6. Vérifier l'API avec les deux profils : consultation des incidents, résolution réservée au responsable et document `/api/openapi.yaml` ; confirmer les codes 400, 404 et 409 sur les cas prévus.
+6. Vérifier l'API avec les deux profils : consultation des incidents, résolution réservée au responsable et Swagger UI `/api/swagger-ui.html` ; confirmer les codes 400, 404 et 409 sur les cas prévus.
 
 Le forfait Free se met en veille après 15 minutes sans requête ; le réveil peut prendre environ une minute. Supabase conserve les données hors du conteneur.
 
