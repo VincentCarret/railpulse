@@ -110,10 +110,10 @@ class IncidentApiIntegrationTests extends SuiviIncidentIntegrationTestSupport {
     @Test
     void swaggerUiEstProtegeEtDisponibleApresConnexion() throws Exception {
         try (HttpClient visiteur = browser()) {
-            assertRedirect(get(visiteur, "/swagger-ui/index.html"), "/login");
+            assertRedirect(get(visiteur, "/api/swagger-ui/index.html"), "/login");
         }
         try (HttpClient client = navigateurConnecte(Profil.AGENT)) {
-            var reponse = get(client, "/swagger-ui/index.html");
+            var reponse = get(client, "/api/swagger-ui/index.html");
             assertEquals(200, reponse.statusCode());
             assertTrue(reponse.body().contains("Swagger UI"));
         }
