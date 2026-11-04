@@ -3,9 +3,10 @@ out/
 .data/
 *.mv.db
 *.trace.db
-.idea/workspace.xml
-.idea/dataSources*
-.idea/httpRequests/
+# Configuration propre a chaque IDE : jamais versionnee.
+.idea/
+*.iml
+.vscode/
 *.log
 config/supabase-local.properties
 # Secrets et variables d'environnement locaux, y compris dans les sous-dossiers.

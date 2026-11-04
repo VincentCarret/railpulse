@@ -8,7 +8,7 @@ Le [README](README.md) contient les prérequis Java 21, les commandes Maven et l
 
 - Application prévue : https://railpulse-23pc.onrender.com. Le 30 octobre 2026, `/login` a d'abord expiré après 90 secondes, puis Render a répondu **502 Bad Gateway** avec `x-render-routing: no-deploy` ; aucun déploiement actif n'était routé à cette adresse lors du second contrôle.
 - Comptes : `demo.agent` / `RAILPULSE_DEMO_AGENT_PASSWORD` et `demo.responsable` / `RAILPULSE_DEMO_RESPONSABLE_PASSWORD`. L'évaluateur définit ses propres mots de passe au lancement ; ils sont hachés avant insertion et ne sont pas versionnés.
-- Base locale : H2 relationnelle dans `.data/`, ignorée par Git. PostgreSQL/Supabase pour Render, MySQL disponible en profil explicite. Le script local force H2 pour protéger les bases distantes d'une configuration héritée.
+- Base locale : H2 relationnelle dans `.data/`, ignorée par Git. PostgreSQL/Supabase pour Render. L'ancien profil MySQL hérité du TP5 a été retiré. Le script local force H2 pour protéger les bases distantes d'une configuration héritée.
 - Initialisation : JPA pour le schéma, `ComptesDemonstrationAuDemarrage` et `DonneesDemonstration` pour les données. Migration BCrypt préalable. Les initialisations sont transactionnelles et idempotentes ; aucun écrasement de compte/catalogue existant.
 - Limites : aucun déploiement actif n'était routé par Render lors du dernier contrôle. `ddl-auto=update` est un choix pédagogique, pas une stratégie de migration de schéma de production.
 
@@ -83,7 +83,7 @@ Le tableau de bord F11 est réservé au responsable côté serveur. L'export CSV
 
 `GET /api/incidents` liste tous les incidents par ouverture décroissante ; `GET /api/incidents/{id}` donne le détail. La réponse expose uniquement les champs utiles, sans sérialiser directement les entités JPA ni le contact du prestataire. Les dates sont transmises en UTC ISO 8601. `POST /api/incidents/{id}/resolution` reprend `IncidentService.resoudreIncident` : même verrou, mêmes contrôles d'état et même horloge que F8. Le responsable seul peut écrire ; une seconde résolution ou une date d'ouverture future est refusée sans changement. L'API renvoie un JSON d'erreur pour les identifiants mal formés (400), les incidents absents (404) et les transitions invalides (409).
 
-La [spécification OpenAPI 3](src/main/resources/static/api/openapi.yaml) est servie à `/api/openapi.yaml` après connexion. L'authentification utilise la session existante ; `GET /api/csrf` fournit le jeton à transmettre dans `X-CSRF-TOKEN` pour le POST. Les utilisateurs non connectés sont redirigés vers `/login`, comme les autres pages protégées. Le contrat décrit les schémas, droits, codes et procédure CSRF ; il n'ajoute pas de secret ni de second mécanisme d'authentification.
+La documentation OpenAPI 3.1 est générée par springdoc-openapi à partir des annotations de `IncidentApiControleur` et de `OpenApiConfig` : Swagger UI sur `/api/swagger-ui.html`, spécification sur `/api/openapi` et `/api/openapi.yaml`, toutes accessibles après connexion. Un premier YAML écrit à la main a été abandonné : il risquait de diverger du code à chaque évolution de l'API. L'authentification utilise la session existante ; `GET /api/csrf` fournit le jeton à transmettre dans `X-CSRF-TOKEN` pour le POST. Les utilisateurs non connectés sont redirigés vers `/login`, comme les autres pages protégées. Le contrat décrit les schémas, droits, codes et procédure CSRF ; il n'ajoute pas de secret ni de second mécanisme d'authentification.
 
 F6 ne modifie que la description d'un incident actif : les identifiants, dates, équipement, statut et affectation restent inchangés. Les résolus sont immuables pour préserver l'historique. Les routes et `@PreAuthorize` vérifient le rôle ; `Incident` vérifie l'état. La présence/absence du bouton n'est pas la protection serveur.
 
@@ -142,7 +142,7 @@ Besoin : détecter les régressions du socle et démontrer le comportement réel
 
 Réalisé : tests HTTP/JPA et métier, horloge fixe, scénarios invalides et champs falsifiés, migration/rollback, JaCoCo, artifacts et deux jobs CI sur Java 21 avec H2 et PostgreSQL. Cela dépasse la seule présence de validation : les transactions, droits et formats produits sont exercés.
 
-Limites : couverture d'exécution distincte de l'ergonomie et des performances. MySQL n'est pas inclus dans la nouvelle matrice, car le déploiement cible PostgreSQL. Les cinq tests HTTP de F12 couvrent le contrat et les refus principaux.
+Limites : couverture d'exécution distincte de l'ergonomie et des performances. Le profil MySQL hérité du TP5 a été retiré : seuls H2 et PostgreSQL, les moteurs réellement utilisés, sont testés. Les cinq tests HTTP de F12 couvrent le contrat et les refus principaux.
 
 ### 2. Export de données à piste 9
 

@@ -24,7 +24,7 @@ Ouvrir **http://localhost:8080/login** :
 
 Les comptes sont créés une seule fois en BCrypt ; relancer ne remplace aucun compte, secret ou catalogue existant. Les mots de passe saisis au premier lancement sont ceux des comptes persistés. Un changement ultérieur des variables ne réinitialise pas ces comptes.
 
-Le script force les paramètres H2 pour éviter qu'une ancienne variable Supabase/MySQL ne cible une base distante. `.data/`, `.env` et ses variantes sont exclus de Git et du contexte Docker. Un autre port est possible : `scripts/demarrer-demo.ps1 -Port 8081`.
+Le script force les paramètres H2 pour éviter qu'une ancienne variable Supabase ne cible une base distante. `.data/`, `.env` et ses variantes sont exclus de Git et du contexte Docker. Un autre port est possible : `scripts/demarrer-demo.ps1 -Port 8081`.
 
 ## Lancement manuel
 
@@ -35,9 +35,19 @@ Définir les deux variables `RAILPULSE_DEMO_AGENT_PASSWORD` et `RAILPULSE_DEMO_R
 java -jar target/railpulse-0.0.1-SNAPSHOT.jar --spring.profiles.active=demo-local,demo
 ```
 
-Pour le lancement manuel, vérifier qu'aucune variable `SPRING_DATASOURCE_*` héritée ne remplace le profil local. Dans IntelliJ : importer le projet Maven, sélectionner Java 21 et lancer `RailPulseApplication` avec `demo-local,demo` et les deux secrets de démonstration.
+Pour le lancement manuel, vérifier qu'aucune variable `SPRING_DATASOURCE_*` héritée ne remplace le profil local. Sans construire le JAR, le plugin Maven lance le même profil :
 
-Pour Supabase : profil `supabase` (ou `supabase,render` sur Render), paramètres décrits dans [docs/supabase.md](docs/supabase.md). Ajouter `demo` et ses deux secrets si l'on souhaite créer les comptes de démonstration et initialiser un catalogue vide. Le profil `mysql` reste disponible ; son mot de passe doit être fourni par `MYSQL_DB_PASSWORD` ou `SPRING_DATASOURCE_PASSWORD`, sans valeur de secours versionnée.
+```powershell
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo-local,demo"
+```
+
+Aucune configuration d'IDE n'est versionnée (`.idea/` est ignoré). Dans IntelliJ : importer le projet Maven, sélectionner Java 21 et créer une configuration `RailPulseApplication` avec le profil `demo-local,demo` et les deux secrets de démonstration.
+
+Pour Supabase : profil `supabase` (ou `supabase,render` sur Render), paramètres décrits dans [docs/supabase.md](docs/supabase.md). Ajouter `demo` et ses deux secrets si l'on souhaite créer les comptes de démonstration et initialiser un catalogue vide.
+
+```powershell
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=supabase"
+```
 
 ## Parcours F1 à F12
 
@@ -58,7 +68,7 @@ Les erreurs conservent la saisie sans écriture ; identifiant mal formé 400, re
 
 ### API REST et OpenAPI
 
-La [spécification OpenAPI 3](src/main/resources/static/api/openapi.yaml) est disponible à `/api/openapi.yaml` après connexion. Elle décrit les réponses JSON, les statuts HTTP et l'authentification par session. Une requête non connectée est redirigée vers `/login`. Pour l'écriture, récupérer le jeton avec `GET /api/csrf` puis le transmettre dans l'en-tête `X-CSRF-TOKEN` du `POST`. Aucun client ne fournit la date de résolution.
+La documentation est générée depuis le code par springdoc-openapi (annotations du contrôleur [IncidentApiControleur](src/main/java/altn72/railpulse/controleur/api/IncidentApiControleur.java)), elle ne peut donc pas diverger de l'implémentation. Après connexion : **Swagger UI** sur `/api/swagger-ui.html`, spécification OpenAPI 3.1 sur `/api/openapi` (JSON) et `/api/openapi.yaml`. Elle décrit les réponses JSON, les statuts HTTP et l'authentification par session. Une requête non connectée est redirigée vers `/login`. Pour l'écriture, récupérer le jeton avec `GET /api/csrf` puis le transmettre dans l'en-tête `X-CSRF-TOKEN` du `POST` (dans Swagger UI : bouton « Authorize », schéma `csrf`). Aucun client ne fournit la date de résolution.
 
 ```text
 GET  /api/incidents

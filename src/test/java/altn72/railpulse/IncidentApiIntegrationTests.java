@@ -101,8 +101,21 @@ class IncidentApiIntegrationTests extends SuiviIncidentIntegrationTestSupport {
         try (HttpClient client = navigateurConnecte(Profil.AGENT)) {
             var reponse = get(client, "/api/openapi.yaml");
             assertEquals(200, reponse.statusCode());
-            assertTrue(reponse.body().contains("openapi: 3.0.3"));
+            assertTrue(reponse.body().startsWith("openapi: 3."));
             assertTrue(reponse.body().contains("/api/incidents/{id}/resolution:"));
+            assertTrue(reponse.body().contains("X-CSRF-TOKEN"));
+        }
+    }
+
+    @Test
+    void swaggerUiEstProtegeEtDisponibleApresConnexion() throws Exception {
+        try (HttpClient visiteur = browser()) {
+            assertRedirect(get(visiteur, "/api/swagger-ui/index.html"), "/login");
+        }
+        try (HttpClient client = navigateurConnecte(Profil.AGENT)) {
+            var reponse = get(client, "/api/swagger-ui/index.html");
+            assertEquals(200, reponse.statusCode());
+            assertTrue(reponse.body().contains("Swagger UI"));
         }
     }
 
