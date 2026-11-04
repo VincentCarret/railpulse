@@ -8,7 +8,7 @@ Le [README](README.md) contient les prérequis Java 21, les commandes Maven et l
 
 - Application prévue : https://railpulse-23pc.onrender.com. Le 30 octobre 2026, `/login` a d'abord expiré après 90 secondes, puis Render a répondu **502 Bad Gateway** avec `x-render-routing: no-deploy` ; aucun déploiement actif n'était routé à cette adresse lors du second contrôle.
 - Comptes : `demo.agent` / `RAILPULSE_DEMO_AGENT_PASSWORD` et `demo.responsable` / `RAILPULSE_DEMO_RESPONSABLE_PASSWORD`. L'évaluateur définit ses propres mots de passe au lancement ; ils sont hachés avant insertion et ne sont pas versionnés.
-- Base locale : H2 relationnelle dans `.data/`, ignorée par Git. PostgreSQL/Supabase pour Render, MySQL disponible en profil explicite. Le script local force H2 pour protéger les bases distantes d'une configuration héritée.
+- Base locale : H2 relationnelle dans `.data/`, ignorée par Git. PostgreSQL/Supabase pour Render. L'ancien profil MySQL hérité du TP5 a été retiré. Le script local force H2 pour protéger les bases distantes d'une configuration héritée.
 - Initialisation : JPA pour le schéma, `ComptesDemonstrationAuDemarrage` et `DonneesDemonstration` pour les données. Migration BCrypt préalable. Les initialisations sont transactionnelles et idempotentes ; aucun écrasement de compte/catalogue existant.
 - Limites : aucun déploiement actif n'était routé par Render lors du dernier contrôle. `ddl-auto=update` est un choix pédagogique, pas une stratégie de migration de schéma de production.
 
@@ -142,7 +142,7 @@ Besoin : détecter les régressions du socle et démontrer le comportement réel
 
 Réalisé : tests HTTP/JPA et métier, horloge fixe, scénarios invalides et champs falsifiés, migration/rollback, JaCoCo, artifacts et deux jobs CI sur Java 21 avec H2 et PostgreSQL. Cela dépasse la seule présence de validation : les transactions, droits et formats produits sont exercés.
 
-Limites : couverture d'exécution distincte de l'ergonomie et des performances. MySQL n'est pas inclus dans la nouvelle matrice, car le déploiement cible PostgreSQL. Les cinq tests HTTP de F12 couvrent le contrat et les refus principaux.
+Limites : couverture d'exécution distincte de l'ergonomie et des performances. Le profil MySQL hérité du TP5 a été retiré : seuls H2 et PostgreSQL, les moteurs réellement utilisés, sont testés. Les cinq tests HTTP de F12 couvrent le contrat et les refus principaux.
 
 ### 2. Export de données à piste 9
 
