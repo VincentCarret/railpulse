@@ -18,12 +18,14 @@ public class EquipementService {
     private final StationRepository stations;
     private final EquipementRepository equipements;
     private final IncidentRepository incidents;
+    private final FragiliteEquipementService fragilite;
 
     public EquipementService(StationRepository stations, EquipementRepository equipements,
-                             IncidentRepository incidents) {
+                             IncidentRepository incidents, FragiliteEquipementService fragilite) {
         this.stations = stations;
         this.equipements = equipements;
         this.incidents = incidents;
+        this.fragilite = fragilite;
     }
 
     public List<Station> listerStations() {
@@ -42,6 +44,6 @@ public class EquipementService {
     }
 
     public FicheEquipement consulterEquipement(Long id) {
-        return new FicheEquipement(lireEquipement(id), incidents.rechercherParEquipement(id));
+        return new FicheEquipement(lireEquipement(id), incidents.rechercherParEquipement(id), fragilite.estFragile(id));
     }
 }
