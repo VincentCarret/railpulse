@@ -1,6 +1,8 @@
 package altn72.railpulse.modele;
 
 import jakarta.persistence.LockModeType;
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +11,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
+    @Query("select i.equipement.id from Incident i where i.equipement.id in :equipementIds "
+            + "and i.dateOuverture >= :debut group by i.equipement.id having count(i) >= :seuil")
+    List<Long> rechercherEquipementsFragiles(@Param("equipementIds") Collection<Long> equipementIds,
+                                            @Param("debut") LocalDateTime debut, @Param("seuil") long seuil);
+
     @Query("select i from Incident i join fetch i.equipement e join fetch e.station "
             + "left join fetch i.prestataire order by i.dateOuverture desc, i.id desc")
     List<Incident> rechercherTousParOuvertureDecroissante();
