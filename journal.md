@@ -1,16 +1,31 @@
 # Journal à Rail Pulse (ALTN72, 2026-2027)
 
-**Groupe : Amir Nassiri et Vincent Carret.** état au 30 octobre 2026, périmètre F1 à F12 sur cette branche.
+**Groupe : Amir Nassiri et Vincent Carret.** État au 5 novembre 2026, périmètre F1 à F12 sur `master`.
+
+## DÉPLOIEMENT RENDER ET SECRETS
+
+**Nous avons déployé Rail Pulse sur Render : [ouvrir l'application](https://railpulse-23pc.onrender.com) · [page de connexion](https://railpulse-23pc.onrender.com/login).** L'application est exécutée dans un conteneur Docker Java 21 et les données sont persistées dans PostgreSQL sur Supabase. Le 5 novembre 2026, un contrôle public de `/login` a obtenu **HTTP 200**.
+
+**Les secrets sont externalisés dans les variables d'environnement Render** : `SPRING_DATASOURCE_PASSWORD` pour la base, `RAILPULSE_DEMO_AGENT_PASSWORD` et `RAILPULSE_DEMO_RESPONSABLE_PASSWORD` pour l'initialisation des comptes de démonstration. Leurs valeurs ne sont pas inscrites dans les fichiers de configuration versionnés ni dans le Dockerfile. `.env` et ses variantes sont exclus de Git et du contexte Docker ; `.env.example` fournit uniquement un modèle sans secret.
+
+Les mots de passe sont hachés en **BCrypt** avant insertion en base. **HTTPS**, le cookie de session sécurisé du profil `render`, les autorisations par rôle et la protection **CSRF** complètent cette gestion des secrets. Les comptes existants ne sont pas réinitialisés par un changement de variable. La [procédure de déploiement](docs/render.md) détaille la configuration et les contrôles authentifiés.
+
+## DERNIÈRES ÉVOLUTIONS
+
+- **4 novembre 2026 — PR #19 intégrée à `master` (`9aa7f94`) :** retrait des restes du TP5 (`LocalMySql` et profil MySQL), des fichiers IntelliJ versionnés et de `HELP.md` ; règles Git pour ignorer les configurations d'IDE.
+- **Documentation de l'API :** remplacement du YAML statique par OpenAPI généré avec springdoc et Swagger UI ; description de la session et du jeton CSRF, configuration des chemins partagée entre l'application et les tests dans `springdoc.properties`.
+- **Tests F12 :** adaptation du contrôle de la spécification générée et ajout d'un test HTTP vérifiant la protection de Swagger UI et son accès après connexion.
+- **5 novembre 2026 — synchronisation et documentation :** récupération de `master` jusqu'à `9aa7f94` sans conflit, mise en avant du déploiement Render et de la gestion des secrets dans le README et le journal. `/login` sur Render répond HTTP 200. Les résultats de tests rapportés ci-dessous datent du 30 octobre ; les tests n'ont pas été relancés pour cette mise à jour documentaire.
 
 ## README
 
 Le [README](README.md) contient les prérequis Java 21, les commandes Maven et le lancement autonome sur H2 avec `scripts/demarrer-demo.ps1`. Une base neuve initialise le catalogue et les deux profils ; une base existante est conservée.
 
-- Application prévue : https://railpulse-23pc.onrender.com. Le 30 octobre 2026, `/login` a d'abord expiré après 90 secondes, puis Render a répondu **502 Bad Gateway** avec `x-render-routing: no-deploy` ; aucun déploiement actif n'était routé à cette adresse lors du second contrôle.
+- Application déployée : [Rail Pulse sur Render](https://railpulse-23pc.onrender.com), avec [connexion](https://railpulse-23pc.onrender.com/login). Le contrôle du 5 novembre 2026 a obtenu HTTP 200 sur `/login`. L'indisponibilité constatée le 30 octobre (502, `x-render-routing: no-deploy`) est un diagnostic historique.
 - Comptes : `demo.agent` / `RAILPULSE_DEMO_AGENT_PASSWORD` et `demo.responsable` / `RAILPULSE_DEMO_RESPONSABLE_PASSWORD`. L'évaluateur définit ses propres mots de passe au lancement ; ils sont hachés avant insertion et ne sont pas versionnés.
 - Base locale : H2 relationnelle dans `.data/`, ignorée par Git. PostgreSQL/Supabase pour Render. L'ancien profil MySQL hérité du TP5 a été retiré. Le script local force H2 pour protéger les bases distantes d'une configuration héritée.
 - Initialisation : JPA pour le schéma, `ComptesDemonstrationAuDemarrage` et `DonneesDemonstration` pour les données. Migration BCrypt préalable. Les initialisations sont transactionnelles et idempotentes ; aucun écrasement de compte/catalogue existant.
-- Limites : aucun déploiement actif n'était routé par Render lors du dernier contrôle. `ddl-auto=update` est un choix pédagogique, pas une stratégie de migration de schéma de production.
+- Limites : le contrôle public de `/login` ne valide pas à lui seul les parcours authentifiés. `ddl-auto=update` est un choix pédagogique, pas une stratégie de migration de schéma de production.
 
 ## ARCHITECTURE
 
@@ -48,7 +63,7 @@ Les tests HTTP lancent un vrai serveur sur port aléatoire et manipulent cookies
 | F9 | Deux profils, résolus uniquement, tri par résolution décroissante puis identifiant, cas vide, liens de détail, accès authentifié et échappement HTML. |
 | F10 | Responsable autorisé, incident résolu avec prestataire, note de 1 à 5, commentaire facultatif, unicité, date serveur, validation, CSRF, champs falsifiés, droits HTTP et service, absence de mutation sur refus. |
 | F11 | 48/72 h à la seconde près, recalcul avec l'horloge, affecté distinct, résolus exclus, tri par attention, filtres station et prise en charge, indicateurs de sélection, accès réservé au responsable et échappement HTML. |
-| F12 | Liste et détail JSON pour les deux profils, résolution par le responsable avec date serveur, 400/404/409, CSRF et refus sans mutation, contrat OpenAPI servi après connexion. |
+| F12 | Liste et détail JSON pour les deux profils, résolution par le responsable avec date serveur, 400/404/409, CSRF et refus sans mutation, contrat OpenAPI généré servi après connexion et protection de Swagger UI. |
 | Sécurité des comptes | Clair et `{noop}` refusés à la connexion ; conversion préalable en BCrypt, idempotence, rollback d'une migration invalide et refus de nouvelles écritures non hachées. |
 | Démonstration | Création transactionnelle des deux comptes, secrets absents refusés, profils préexistants protégés, connexion réelle, catalogue varié et relancement sans duplication. |
 | Export CSV | Droits des deux profils, format/encodage/en-têtes, catalogue vide, guillemets/séparateurs/retours ligne et neutralisation des formules. |
@@ -130,7 +145,7 @@ Référence : [Hibernate à schémas des requêtes natives](https://docs.hiberna
 
 Le `PasswordEncoder` n'accepte que BCrypt. `User` impose un format BCrypt sur les nouvelles écritures JPA. `AuthService` n'accepte plus le clair ni `{noop}` : leur conversion est une migration de données au démarrage, pas une méthode d'authentification.
 
-Les deux secrets demo sont fournis par environnement ou saisie locale ; aucun mot de passe par défaut n'est inscrit dans le code. Le fallback MySQL a été supprimé et sa configuration locale préservée hors Git. `.env`, `.env.*` et les bases locales sont ignorés ; `.env.example` ne contient que des valeurs vides ou des paramètres de connexion factices.
+Sur Render, le mot de passe PostgreSQL et les deux secrets demo sont fournis par variables d'environnement ; en démonstration locale, les secrets sont fournis par environnement ou saisie masquée. Aucun mot de passe par défaut n'est inscrit dans le code. Le fallback MySQL a été supprimé et sa configuration locale préservée hors Git. `.env`, `.env.*` et les bases locales sont ignorés ; les fichiers `.env` sont aussi exclus du contexte Docker. `.env.example` ne contient que des valeurs vides ou des paramètres de connexion factices.
 
 La suppression d'une valeur du code courant ne réécrit pas l'historique Git. Une ancienne valeur de base encore utilisée doit être renouvelée par son propriétaire. Les tests utilisent uniquement des secrets temporaires sans lien avec la production.
 
@@ -142,7 +157,7 @@ Besoin : détecter les régressions du socle et démontrer le comportement réel
 
 Réalisé : tests HTTP/JPA et métier, horloge fixe, scénarios invalides et champs falsifiés, migration/rollback, JaCoCo, artifacts et deux jobs CI sur Java 21 avec H2 et PostgreSQL. Cela dépasse la seule présence de validation : les transactions, droits et formats produits sont exercés.
 
-Limites : couverture d'exécution distincte de l'ergonomie et des performances. Le profil MySQL hérité du TP5 a été retiré : seuls H2 et PostgreSQL, les moteurs réellement utilisés, sont testés. Les cinq tests HTTP de F12 couvrent le contrat et les refus principaux.
+Limites : couverture d'exécution distincte de l'ergonomie et des performances. Le profil MySQL hérité du TP5 a été retiré : seuls H2 et PostgreSQL, les moteurs réellement utilisés, sont testés. La classe F12 contient désormais six tests HTTP couvrant le contrat, les refus principaux et l'accès à Swagger UI ; leur présence ne constitue pas un nouveau résultat d'exécution.
 
 ### 2. Export de données à piste 9
 
@@ -165,7 +180,7 @@ Ces deux choix appartiennent aux pistes proposées au à6. La sécurité F1 et C
 
 Les noms du groupe ont été fournis par les membres. Cette table décrit l'historique, pas une mesure de temps ni une répartition complète du travail hors Git. Chaque membre doit valider sa contribution réelle et savoir expliquer la solution. L'assistance Codex pour le code, les tests et les revues est déclarée ; elle ne prouve pas la maîtrise orale du groupe.
 
-Les PR F7–F12 (#10 à #15) et le retrait des restes hors sujet (#16) sont intégrés à `master`. La présente mise à jour documentaire reste sur une branche distincte jusqu'à sa revue.
+Les PR F7–F12 (#10 à #15), le retrait des restes hors sujet (#16), la finalisation du journal (#17), la préparation du rendu (#18) et le nettoyage avec Swagger (#19) sont intégrés à `master`. La mise à jour documentaire du 5 novembre complète ce bilan avec le déploiement Render et la gestion des secrets.
 
 ### Difficultés techniques observées
 
@@ -177,6 +192,6 @@ La difficulté technique principale documentée par l'historique est la reproduc
 
 ### Reste à faire
 
-Les fonctionnalités F1 à F12 et les deux fonctionnalités du lot alpha sont présentes dans `master` ; aucune fonctionnalité obligatoire du socle n'est identifiée comme non réalisée. Les parcours authentifiés sur Render, l'accessibilité publique, la rotation éventuelle d'un ancien secret et la validation humaine du bilan restent à effectuer. La copie propre et la CI réussies ne prouvent pas à elles seules la conformité finale du déploiement ni du rendu.
+Les fonctionnalités F1 à F12 et les deux fonctionnalités du lot alpha sont présentes dans `master` ; aucune fonctionnalité obligatoire du socle n'est identifiée comme non réalisée. Le déploiement Render est réalisé et `/login` est accessible publiquement (HTTP 200 le 5 novembre 2026). Les parcours authentifiés sur Render, la rotation éventuelle d'un ancien secret et la validation humaine du bilan restent à effectuer. La copie propre, la CI et la disponibilité de la page de connexion ne prouvent pas à elles seules la conformité finale du déploiement ni du rendu.
 
 Trois acquis : séparer HTTP, métier et données ; faire respecter invariants/droits côté serveur ; vérifier les succès et les refus par des tests reproductibles sur des bases isolées.

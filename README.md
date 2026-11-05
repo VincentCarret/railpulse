@@ -5,6 +5,14 @@ Application Java 21 / Spring Boot 4.1.1, Maven, Thymeleaf et JPA. PostgreSQL/Sup
 
 F1 à F12 sont réalisées sur `master`. Le [journal](journal.md) justifie les choix et le [bilan de conformité](docs/etat-des-lieux.md) distingue le réalisé du reste à faire.
 
+## Application déployée sur Render
+
+**Nous avons déployé Rail Pulse sur Render : [ouvrir l'application](https://railpulse-23pc.onrender.com) · [se connecter](https://railpulse-23pc.onrender.com/login).** Le service exécute l'application dans un conteneur Docker avec Java 21 et utilise PostgreSQL hébergé sur Supabase. La page `/login` a répondu HTTP 200 lors du contrôle du 5 novembre 2026.
+
+**Les secrets sont configurés dans les variables d'environnement de Render**, notamment `SPRING_DATASOURCE_PASSWORD`, `RAILPULSE_DEMO_AGENT_PASSWORD` et `RAILPULSE_DEMO_RESPONSABLE_PASSWORD`. Leurs valeurs ne figurent pas dans les fichiers de configuration versionnés ni dans le Dockerfile. Les fichiers `.env` sont exclus de Git et du contexte Docker ; seul un modèle sans secret est fourni dans [.env.example](.env.example).
+
+Les mots de passe des comptes sont hachés en **BCrypt** avant leur enregistrement en base. Le déploiement utilise **HTTPS**, le profil `render` impose un cookie de session sécurisé, et Spring Security applique les droits par rôle ainsi que la protection **CSRF** sur les écritures. La [procédure Render](docs/render.md) détaille la configuration.
+
 ## Démarrer depuis un clone propre sous Windows
 
 Prérequis : JDK 21 (ou version compatible supérieure) accessible par `java` et `JAVA_HOME`, accès Internet pour télécharger les dépendances Maven. Aucun serveur de base de données n'est requis pour cette démonstration.
@@ -100,7 +108,7 @@ La CI exécute les mêmes tests sous Java 21 avec H2 et un vrai PostgreSQL tempo
 
 ## Déploiement et limites
 
-URL de déploiement prévue : https://railpulse-23pc.onrender.com ; le 30 octobre 2026, Render répondait **502 Bad Gateway** avec `x-render-routing: no-deploy`. Voir la [procédure Render](docs/render.md) pour rétablir et vérifier le service.
-Le Dockerfile construit et teste avec Java 21. Les variables de base et de démonstration doivent être configurées sur Render avant d'y déployer les correctifs. Le déploiement peut attendre les deux jobs CI via **Auto-Deploy à After CI Checks Pass**.
+L'application est déployée sur **[Render](https://railpulse-23pc.onrender.com)**. Le contrôle du 5 novembre 2026 a obtenu **HTTP 200 sur `/login`** ; les parcours authentifiés restent un contrôle distinct. Le diagnostic d'indisponibilité du 30 octobre est historique.
+Le Dockerfile construit et teste avec Java 21. Les secrets de base et de démonstration sont fournis par l'environnement Render. Le déploiement peut attendre les deux jobs CI via **Auto-Deploy à After CI Checks Pass**. Voir la [procédure Render](docs/render.md) pour la configuration et les contrôles après déploiement.
 
 `ddl-auto=update` et l'initialisation applicative conviennent au projet pédagogique ; des migrations de schéma versionnées restent une amélioration pour une exploitation durable.
