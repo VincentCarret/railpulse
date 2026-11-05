@@ -16,6 +16,7 @@ Les mots de passe sont hachés en **BCrypt** avant insertion en base. **HTTPS**,
 - **Documentation de l'API :** remplacement du YAML statique par OpenAPI généré avec springdoc et Swagger UI ; description de la session et du jeton CSRF, configuration des chemins partagée entre l'application et les tests dans `springdoc.properties`.
 - **Tests F12 :** adaptation du contrôle de la spécification générée et ajout d'un test HTTP vérifiant la protection de Swagger UI et son accès après connexion.
 - **5 novembre 2026 — synchronisation et documentation :** récupération de `master` jusqu'à `9aa7f94` sans conflit, mise en avant du déploiement Render et de la gestion des secrets dans le README et le journal. `/login` sur Render répond HTTP 200. Les résultats de tests rapportés ci-dessous datent du 30 octobre ; les tests n'ont pas été relancés pour cette mise à jour documentaire.
+- **5 novembre 2026 — dataset additionnel :** préparation du [script SQL Supabase](scripts/dataset-demo-supabase.sql) et de son [mode d'emploi](docs/dataset-demo.md) pour ajouter manuellement 8 stations, 40 équipements, 4 prestataires, 48 incidents et 8 évaluations fictifs. Validation sur un PostgreSQL 18 temporaire avec le schéma créé par l'application : quantités, états, dates et conservation des données/comptes existants vérifiés ; deux relancements sans doublons, dont un après modification d'incident et d'évaluation. Aucune insertion dans Supabase n'a été effectuée pendant cette préparation.
 
 ## Évolution séance finale
 

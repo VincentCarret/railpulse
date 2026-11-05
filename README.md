@@ -15,6 +15,8 @@ Le complément **Équipement fragile** est implémenté : au moins 3 incidents o
 
 Les mots de passe des comptes sont hachés en **BCrypt** avant leur enregistrement en base. Le déploiement utilise **HTTPS**, le profil `render` impose un cookie de session sécurisé, et Spring Security applique les droits par rôle ainsi que la protection **CSRF** sur les écritures. La [procédure Render](docs/render.md) détaille la configuration.
 
+Pour enrichir la démonstration en ligne, le [jeu de données fictives Supabase](docs/dataset-demo.md) fournit un script SQL à importer manuellement : 8 stations, 40 équipements, 4 prestataires, 48 incidents et 8 évaluations, sans remplacer les données existantes.
+
 ## Démarrer depuis un clone propre sous Windows
 
 Prérequis : JDK 21 (ou version compatible supérieure) accessible par `java` et `JAVA_HOME`, accès Internet pour télécharger les dépendances Maven. Aucun serveur de base de données n'est requis pour cette démonstration.
