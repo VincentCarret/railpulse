@@ -36,6 +36,7 @@ public class EquipementControleur {
         FicheEquipement fiche = equipementService.consulterEquipement(id);
         model.addAttribute("equipement", fiche.equipement());
         model.addAttribute("incidents", fiche.incidents());
+        model.addAttribute("fragile", fiche.fragile());
         return "ficheEquipement";
     }
 }

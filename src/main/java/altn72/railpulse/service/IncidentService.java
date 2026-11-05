@@ -29,14 +29,17 @@ public class IncidentService {
     private final Clock horloge;
     private final EvaluationRepository evaluations;
     private final PrestataireRepository prestataires;
+    private final FragiliteEquipementService fragilite;
 
     public IncidentService(EquipementService equipementService, IncidentRepository incidents,
-                           Clock horloge, EvaluationRepository evaluations, PrestataireRepository prestataires) {
+                           Clock horloge, EvaluationRepository evaluations, PrestataireRepository prestataires,
+                           FragiliteEquipementService fragilite) {
         this.equipementService = equipementService;
         this.incidents = incidents;
         this.horloge = horloge;
         this.evaluations = evaluations;
         this.prestataires = prestataires;
+        this.fragilite = fragilite;
     }
 
     public DetailIncident consulter(Long id) {
@@ -68,11 +71,12 @@ public class IncidentService {
     }
 
     @Transactional
-    public Incident declarer(Long equipementId,
+    public ResultatDeclarationIncident declarer(Long equipementId,
                              @NotNull(message = "La déclaration d'incident est obligatoire.") @Valid DescriptionIncident declaration) {
         Equipement equipement = equipementService.lireEquipement(equipementId);
         Incident incident = new Incident(equipement, declaration.getDescription().strip(), LocalDateTime.now(horloge));
-        return incidents.save(incident);
+        incidents.saveAndFlush(incident);
+        return new ResultatDeclarationIncident(incident, fragilite.estFragile(equipementId));
     }
 
     @PreAuthorize("hasRole('RESPONSABLE_EXPLOITATION')")

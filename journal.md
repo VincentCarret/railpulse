@@ -16,6 +16,44 @@ Les mots de passe sont hachés en **BCrypt** avant insertion en base. **HTTPS**,
 - **Documentation de l'API :** remplacement du YAML statique par OpenAPI généré avec springdoc et Swagger UI ; description de la session et du jeton CSRF, configuration des chemins partagée entre l'application et les tests dans `springdoc.properties`.
 - **Tests F12 :** adaptation du contrôle de la spécification générée et ajout d'un test HTTP vérifiant la protection de Swagger UI et son accès après connexion.
 - **5 novembre 2026 — synchronisation et documentation :** récupération de `master` jusqu'à `9aa7f94` sans conflit, mise en avant du déploiement Render et de la gestion des secrets dans le README et le journal. `/login` sur Render répond HTTP 200. Les résultats de tests rapportés ci-dessous datent du 30 octobre ; les tests n'ont pas été relancés pour cette mise à jour documentaire.
+- **5 novembre 2026 — dataset additionnel :** préparation du [script SQL Supabase](scripts/dataset-demo-supabase.sql) et de son [mode d'emploi](docs/dataset-demo.md) pour ajouter manuellement 8 stations, 40 équipements, 4 prestataires, 48 incidents et 8 évaluations fictifs. Validation sur un PostgreSQL 18 temporaire avec le schéma créé par l'application : quantités, états, dates et conservation des données/comptes existants vérifiés ; deux relancements sans doublons, dont un après modification d'incident et d'évaluation. Aucune insertion dans Supabase n'a été effectuée pendant cette préparation.
+
+## Évolution séance finale
+
+### Évolution réalisée
+
+Le complément « Équipement fragile » du 5 novembre 2026 est implémenté : un équipement est fragile dès qu'il possède au moins trois incidents ouverts à partir de l'instant courant moins trente jours, borne incluse. Les incidents non affectés, affectés et résolus comptent tous. La fenêtre est recalculée à chaque consultation avec l'horloge UTC injectée ; aucun indicateur de fragilité n'est enregistré en base.
+
+Fichiers principaux :
+
+- [FragiliteEquipementService](src/main/java/altn72/railpulse/service/FragiliteEquipementService.java) centralise les constantes `SEUIL_INCIDENTS` et `FENETRE_JOURS`, le calcul de la borne et la décision de fragilité (EF1 à EF6).
+- [IncidentRepository](src/main/java/altn72/railpulse/modele/IncidentRepository.java) compte les ouvertures par équipement en JPQL, sans filtre de statut, avec une borne `>=` et un regroupement par identifiant.
+- `EquipementService` et `FicheEquipement` transmettent le résultat à `ficheEquipement.html`. Le badge porte exactement **Équipement fragile** et n'est rendu que si le résultat est vrai.
+- `TableauDeBordService` et `IncidentActif` transmettent le résultat à `tableauDeBord.html` pour chaque ligne active. Le comptage inclut aussi les incidents résolus et ceux masqués par les filtres du tableau.
+- `IncidentService` enregistre et synchronise la déclaration avant le comptage dans la même transaction, puis renvoie `ResultatDeclarationIncident`. `IncidentControleur` choisit seulement le texte de confirmation : il contient **fragile** dès que le seuil est atteint, y compris pour une nouvelle déclaration sur un équipement déjà fragile.
+
+### Choix de conception et raccourcis
+
+La règle reste dans le service ; les contrôleurs et vues n'effectuent ni comptage ni comparaison de seuil ou de dates. Le tableau de bord utilise une seule requête groupée supplémentaire pour tous les équipements visibles, plutôt qu'une requête par ligne. Le seuil et la fenêtre sont définis uniquement dans `FragiliteEquipementService`. Le comptage utilise l'index existant équipement/date d'ouverture. Les booléens des objets de consultation sont temporaires : aucune migration de schéma, colonne persistée, tâche planifiée ou cache à invalider.
+
+Aucun raccourci fonctionnel : les sept cas de référence du sujet sont couverts. La requête suit exactement EF1 (borne basse inclusive sur la date d'ouverture). Le résultat décrit l'état lu pendant la requête ; aucune nouvelle sérialisation des déclarations concurrentes n'est ajoutée. Les badges réutilisent le composant Bootstrap déjà présent.
+
+### Tests ajoutés et limites connues
+
+[FragiliteEquipementIntegrationTests](src/test/java/altn72/railpulse/FragiliteEquipementIntegrationTests.java) ajoute 14 cas exécutés avec une horloge contrôlée, une vraie base relationnelle et des échanges HTTP :
+
+- 0, 1, 2, 3 et 4 incidents : seuil inclusif et cohérence de la fiche côté service.
+- Troisième incident ouvert il y a 30 jours et 1 minute, exactement 30 jours, ou 29 jours et 23 h 59 : exclusion/inclusion conforme.
+- Mélange des trois statuts, dont un résolu : tous contribuent au seuil.
+- Deux incidents récents et cinq vieux de 45 jours, équipement voisin avec un seul incident : absence de contamination.
+- Badge exact présent/absent sur les fiches, avec les deux profils.
+- Badge sur chaque ligne active fragile du tableau, absence sur le voisin et sur les résolus, comptage maintenu après filtrage par station et prise en charge.
+- Avancement de l'horloge seul : disparition du badge sur la fiche et le tableau, sans écriture en base.
+- Déclarations successives de 1 à 4 incidents par chacun des deux profils : confirmation contenant « fragile » à partir de la troisième, nouveau signalement inclus immédiatement.
+
+Validation du 5 novembre 2026 sous Java 21 : `mvnw.cmd -B -ntp verify` réussit avec **113 tests sur H2, 0 échec, 0 erreur**, et génère le JAR et le rapport JaCoCo. Les **14 nouveaux cas** réussissent également sur un **PostgreSQL 18 temporaire** avec `mvnw.cmd -B -ntp -Dtest=FragiliteEquipementIntegrationTests test`, les variables `TEST_DB_*` ciblant exclusivement cette base locale de contrôle. Les instances temporaires sont ensuite arrêtées.
+
+La vérification du rendu couvre le HTML servi ; elle ne remplace pas un contrôle visuel complet du navigateur. L'évolution doit encore être déployée pour apparaître sur Render.
 
 ## README
 

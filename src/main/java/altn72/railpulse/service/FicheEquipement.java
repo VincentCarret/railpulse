@@ -5,5 +5,5 @@ import altn72.railpulse.modele.Incident;
 
 import java.util.List;
 
-public record FicheEquipement(Equipement equipement, List<Incident> incidents) {
+public record FicheEquipement(Equipement equipement, List<Incident> incidents, boolean fragile) {
 }

@@ -5,6 +5,8 @@ Application Java 21 / Spring Boot 4.1.1, Maven, Thymeleaf et JPA. PostgreSQL/Sup
 
 F1 à F12 sont réalisées sur `master`. Le [journal](journal.md) justifie les choix et le [bilan de conformité](docs/etat-des-lieux.md) distingue le réalisé du reste à faire.
 
+Le complément **Équipement fragile** est implémenté : au moins 3 incidents ouverts sur les 30 derniers jours, tous statuts confondus, déclenchent un badge sur la fiche et les lignes actives du tableau de bord. La confirmation de déclaration signale aussi la fragilité. Le calcul est glissant, sans stockage en base ; conception et tests sont décrits dans la section **Évolution séance finale** du [journal](journal.md).
+
 ## Application déployée sur Render
 
 **Nous avons déployé Rail Pulse sur Render : [ouvrir l'application](https://railpulse-23pc.onrender.com) · [se connecter](https://railpulse-23pc.onrender.com/login).** Le service exécute l'application dans un conteneur Docker avec Java 21 et utilise PostgreSQL hébergé sur Supabase. La page `/login` a répondu HTTP 200 lors du contrôle du 5 novembre 2026.
@@ -12,6 +14,8 @@ F1 à F12 sont réalisées sur `master`. Le [journal](journal.md) justifie les c
 **Les secrets sont configurés dans les variables d'environnement de Render**, notamment `SPRING_DATASOURCE_PASSWORD`, `RAILPULSE_DEMO_AGENT_PASSWORD` et `RAILPULSE_DEMO_RESPONSABLE_PASSWORD`. Leurs valeurs ne figurent pas dans les fichiers de configuration versionnés ni dans le Dockerfile. Les fichiers `.env` sont exclus de Git et du contexte Docker ; seul un modèle sans secret est fourni dans [.env.example](.env.example).
 
 Les mots de passe des comptes sont hachés en **BCrypt** avant leur enregistrement en base. Le déploiement utilise **HTTPS**, le profil `render` impose un cookie de session sécurisé, et Spring Security applique les droits par rôle ainsi que la protection **CSRF** sur les écritures. La [procédure Render](docs/render.md) détaille la configuration.
+
+Pour enrichir la démonstration en ligne, le [jeu de données fictives Supabase](docs/dataset-demo.md) fournit un script SQL à importer manuellement : 8 stations, 40 équipements, 4 prestataires, 48 incidents et 8 évaluations, sans remplacer les données existantes.
 
 ## Démarrer depuis un clone propre sous Windows
 

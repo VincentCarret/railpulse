@@ -59,7 +59,8 @@
                                    th:attr="aria-label=|Consulter le détail de l'incident ${ligne.incident.id}|"></a></th>
                 <td th:text="${ligne.incident.equipement.station.nom}"></td>
                 <td><a th:href="@{/equipements/{id}(id=${ligne.incident.equipement.id})}"
-                       th:text="${ligne.incident.equipement.reference}"></a></td>
+                       th:text="${ligne.incident.equipement.reference}"></a>
+                    <span th:if="${ligne.equipementFragile}" class="badge text-bg-warning">Équipement fragile</span></td>
                 <td class="incident-description" th:text="${ligne.incident.description}"></td>
                 <td class="text-nowrap" th:text="${#temporals.format(ligne.incident.dateOuverture, 'dd/MM/yyyy HH:mm')}"></td>
                 <td class="text-nowrap" th:text="${ligne.dureeOuverture}"></td>
