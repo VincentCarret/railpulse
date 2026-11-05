@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,21 +22,28 @@ public class TableauDeBordService {
     private final IncidentRepository incidents;
     private final StationRepository stations;
     private final Clock horloge;
+    private final FragiliteEquipementService fragilite;
 
-    public TableauDeBordService(IncidentRepository incidents, StationRepository stations, Clock horloge) {
+    public TableauDeBordService(IncidentRepository incidents, StationRepository stations, Clock horloge,
+                               FragiliteEquipementService fragilite) {
         this.incidents = incidents;
         this.stations = stations;
         this.horloge = horloge;
+        this.fragilite = fragilite;
     }
 
     @PreAuthorize("hasRole('RESPONSABLE_EXPLOITATION')")
     public TableauDeBord consulter(Long stationId, FiltrePriseEnCharge priseEnCharge) {
         LocalDateTime maintenant = LocalDateTime.now(horloge);
-        List<IncidentActif> visibles = incidents.rechercherActifs(StatutIncident.RESOLU).stream()
+        List<Incident> selection = incidents.rechercherActifs(StatutIncident.RESOLU).stream()
                 .filter(incident -> stationId == null || Objects.equals(incident.getEquipement().getStation().getId(), stationId))
                 .filter(incident -> priseEnCharge.inclut(incident.getStatut()))
+                .toList();
+        Set<Long> fragiles = fragilite.rechercherFragiles(selection.stream()
+                .map(incident -> incident.getEquipement().getId()).collect(Collectors.toSet()), maintenant);
+        List<IncidentActif> visibles = selection.stream()
                 .map(incident -> new IncidentActif(incident, NiveauAttention.calculer(incident, maintenant),
-                        formaterDuree(incident, maintenant)))
+                        formaterDuree(incident, maintenant), fragiles.contains(incident.getEquipement().getId())))
                 .sorted(Comparator.comparingInt((IncidentActif ligne) -> ligne.attention().getPriorite())
                         .thenComparing(ligne -> ligne.incident().getDateOuverture())
                         .thenComparing(ligne -> ligne.incident().getId(), Comparator.reverseOrder()))
