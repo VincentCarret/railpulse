@@ -46,8 +46,10 @@ public class IncidentControleur {
         if (erreurs.hasErrors()) {
             return formulaire(equipementId, model);
         }
-        incidentService.declarer(equipementId, declaration);
-        redirection.addFlashAttribute("succes", "L'incident a été déclaré. Il est en attente d'affectation.");
+        var resultat = incidentService.declarer(equipementId, declaration);
+        redirection.addFlashAttribute("succes", resultat.equipementFragile()
+                ? "L'incident a été déclaré. Il est en attente d'affectation. Cet équipement est fragile."
+                : "L'incident a été déclaré. Il est en attente d'affectation.");
         return "redirect:/equipements/" + equipementId;
     }
 
